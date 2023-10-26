@@ -14,16 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook_frame
-
-import (
-	"context"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// WebhookAdapter should be implemented by adapters which follow PodOpsLifecycle
-type WebhookAdapter interface {
-	Name() string
-	GetEmployersByEmployee(ctx context.Context, employee client.Object, client client.Client) ([]client.Object, error)
-}
+package adapters

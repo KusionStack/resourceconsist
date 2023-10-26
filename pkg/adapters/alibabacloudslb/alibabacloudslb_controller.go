@@ -24,18 +24,18 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"kusionstack.io/resourceconsist/pkg/controller_frame"
+	controllerframe "kusionstack.io/resourceconsist/pkg/frame/controller"
 )
 
-var _ controller_frame.ReconcileAdapter = &SlbControllerAdapter{}
-var _ controller_frame.ReconcileLifecycleOptions = &SlbControllerAdapter{}
+var _ controllerframe.ReconcileAdapter = &SlbControllerAdapter{}
+var _ controllerframe.ReconcileLifecycleOptions = &SlbControllerAdapter{}
 
 type SlbControllerAdapter struct {
 	client.Client
 	slbClient *AlibabaCloudSlbClient
 }
 
-func NewReconcileAdapter(c client.Client) (controller_frame.ReconcileAdapter, error) {
+func NewReconcileAdapter(c client.Client) (controllerframe.ReconcileAdapter, error) {
 	slbClient, err := NewAlibabaCloudSlbClient()
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (r *SlbControllerAdapter) GetControllerName() string {
 	return "alibaba-cloud-slb-controller"
 }
 
-func (r *SlbControllerAdapter) GetExpectedEmployer(ctx context.Context, employer client.Object) ([]controller_frame.IEmployer, error) {
+func (r *SlbControllerAdapter) GetExpectedEmployer(ctx context.Context, employer client.Object) ([]controllerframe.IEmployer, error) {
 	return nil, nil
 }
 
@@ -86,23 +86,23 @@ func (r *SlbControllerAdapter) GetSelectedEmployeeNames(ctx context.Context, emp
 	return selected, nil
 }
 
-func (r *SlbControllerAdapter) GetCurrentEmployer(ctx context.Context, employer client.Object) ([]controller_frame.IEmployer, error) {
+func (r *SlbControllerAdapter) GetCurrentEmployer(ctx context.Context, employer client.Object) ([]controllerframe.IEmployer, error) {
 	return nil, nil
 }
 
-func (r *SlbControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []controller_frame.IEmployer) ([]controller_frame.IEmployer, []controller_frame.IEmployer, error) {
+func (r *SlbControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []controllerframe.IEmployer) ([]controllerframe.IEmployer, []controllerframe.IEmployer, error) {
 	return nil, nil, nil
 }
 
-func (r *SlbControllerAdapter) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []controller_frame.IEmployer) ([]controller_frame.IEmployer, []controller_frame.IEmployer, error) {
+func (r *SlbControllerAdapter) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []controllerframe.IEmployer) ([]controllerframe.IEmployer, []controllerframe.IEmployer, error) {
 	return nil, nil, nil
 }
 
-func (r *SlbControllerAdapter) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []controller_frame.IEmployer) ([]controller_frame.IEmployer, []controller_frame.IEmployer, error) {
+func (r *SlbControllerAdapter) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []controllerframe.IEmployer) ([]controllerframe.IEmployer, []controllerframe.IEmployer, error) {
 	return nil, nil, nil
 }
 
-func (r *SlbControllerAdapter) GetExpectedEmployee(ctx context.Context, employer client.Object) ([]controller_frame.IEmployee, error) {
+func (r *SlbControllerAdapter) GetExpectedEmployee(ctx context.Context, employer client.Object) ([]controllerframe.IEmployee, error) {
 	svc, ok := employer.(*corev1.Service)
 	if !ok {
 		return nil, fmt.Errorf("expect employer kind is Service")
@@ -114,13 +114,13 @@ func (r *SlbControllerAdapter) GetExpectedEmployee(ctx context.Context, employer
 		return nil, err
 	}
 
-	expected := make([]controller_frame.IEmployee, len(podList.Items))
+	expected := make([]controllerframe.IEmployee, len(podList.Items))
 	for idx, pod := range podList.Items {
 		status := AlibabaSlbPodStatus{
 			EmployeeID:   pod.Status.PodIP,
 			EmployeeName: pod.Name,
 		}
-		employeeStatuses, err := controller_frame.GetCommonPodEmployeeStatus(&pod)
+		employeeStatuses, err := controllerframe.GetCommonPodEmployeeStatus(&pod)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +138,7 @@ func (r *SlbControllerAdapter) GetExpectedEmployee(ctx context.Context, employer
 	return expected, nil
 }
 
-func (r *SlbControllerAdapter) GetCurrentEmployee(ctx context.Context, employer client.Object) ([]controller_frame.IEmployee, error) {
+func (r *SlbControllerAdapter) GetCurrentEmployee(ctx context.Context, employer client.Object) ([]controllerframe.IEmployee, error) {
 	svc, ok := employer.(*corev1.Service)
 	if !ok {
 		return nil, fmt.Errorf("expect employer kind is Service")
@@ -162,13 +162,13 @@ func (r *SlbControllerAdapter) GetCurrentEmployee(ctx context.Context, employer 
 		}
 	}
 
-	current := make([]controller_frame.IEmployee, len(podList.Items))
+	current := make([]controllerframe.IEmployee, len(podList.Items))
 	for idx, pod := range podList.Items {
 		status := AlibabaSlbPodStatus{
 			EmployeeID:   pod.Status.PodIP,
 			EmployeeName: pod.Name,
 		}
-		employeeStatuses, err := controller_frame.GetCommonPodEmployeeStatus(&pod)
+		employeeStatuses, err := controllerframe.GetCommonPodEmployeeStatus(&pod)
 		if err != nil {
 			return nil, err
 		}
@@ -187,16 +187,16 @@ func (r *SlbControllerAdapter) GetCurrentEmployee(ctx context.Context, employer 
 }
 
 // CreateEmployees returns (nil, toCreate, nil) since CCM of ACK will sync bs of slb
-func (r *SlbControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []controller_frame.IEmployee) ([]controller_frame.IEmployee, []controller_frame.IEmployee, error) {
+func (r *SlbControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []controllerframe.IEmployee) ([]controllerframe.IEmployee, []controllerframe.IEmployee, error) {
 	return nil, toCreates, nil
 }
 
 // UpdateEmployees returns (nil, toUpdate, nil) since CCM of ACK will sync bs of slb
-func (r *SlbControllerAdapter) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []controller_frame.IEmployee) ([]controller_frame.IEmployee, []controller_frame.IEmployee, error) {
+func (r *SlbControllerAdapter) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []controllerframe.IEmployee) ([]controllerframe.IEmployee, []controllerframe.IEmployee, error) {
 	return nil, toUpdates, nil
 }
 
 // DeleteEmployees returns (nil, toDelete, nil) since CCM of ACK will sync bs of slb
-func (r *SlbControllerAdapter) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []controller_frame.IEmployee) ([]controller_frame.IEmployee, []controller_frame.IEmployee, error) {
+func (r *SlbControllerAdapter) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []controllerframe.IEmployee) ([]controllerframe.IEmployee, []controllerframe.IEmployee, error) {
 	return nil, toDeletes, nil
 }

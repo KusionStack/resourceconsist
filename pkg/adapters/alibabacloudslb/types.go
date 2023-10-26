@@ -20,15 +20,15 @@ import (
 	"fmt"
 	"reflect"
 
-	"kusionstack.io/resourceconsist/pkg/controller_frame"
+	"kusionstack.io/resourceconsist/pkg/frame/controller"
 )
 
-var _ controller_frame.IEmployee = AlibabaSlbPodStatus{}
+var _ controller.IEmployee = AlibabaSlbPodStatus{}
 
 type AlibabaSlbPodStatus struct {
 	EmployeeID       string
 	EmployeeName     string
-	EmployeeStatuses controller_frame.PodEmployeeStatuses
+	EmployeeStatuses controller.PodEmployeeStatuses
 }
 
 type PodExtraStatus struct {
@@ -47,12 +47,12 @@ func (a AlibabaSlbPodStatus) GetEmployeeStatuses() interface{} {
 	return a.EmployeeStatuses
 }
 
-func (a AlibabaSlbPodStatus) EmployeeEqual(employeeStatus controller_frame.IEmployee) (bool, error) {
+func (a AlibabaSlbPodStatus) EmployeeEqual(employeeStatus controller.IEmployee) (bool, error) {
 	if a.EmployeeName != employeeStatus.GetEmployeeName() {
 		return false, nil
 	}
 
-	podEmployeeStatuses, ok := employeeStatus.GetEmployeeStatuses().(controller_frame.PodEmployeeStatuses)
+	podEmployeeStatuses, ok := employeeStatus.GetEmployeeStatuses().(controller.PodEmployeeStatuses)
 	if !ok {
 		return false, fmt.Errorf("employee to diff is not Pod Employee status")
 	}

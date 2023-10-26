@@ -25,15 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"kusionstack.io/kube-api/apps/v1alpha1"
-	"kusionstack.io/resourceconsist/pkg/webhook_frame"
+	"kusionstack.io/resourceconsist/pkg/frame/webhook"
 )
 
-var _ webhook_frame.WebhookAdapter = &SlbWebhookAdapter{}
+var _ webhook.WebhookAdapter = &SlbWebhookAdapter{}
 
 type SlbWebhookAdapter struct {
 }
 
-func NewWebhookAdapter() webhook_frame.WebhookAdapter {
+func NewWebhookAdapter() webhook.WebhookAdapter {
 	return &SlbWebhookAdapter{}
 }
 

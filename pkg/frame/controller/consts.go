@@ -14,4 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhookadapters
+package controller
+
+const (
+	defaultMaxConcurrentReconciles    = 5
+	expectedFinalizerAddedAnnoKey     = "resource-consist.kusionstack.io/employees-expected-finalizer-added"
+	lifecycleFinalizerRecordedAnnoKey = "resource-consist.kusionstack.io/employees-lifecycle-finalizer-recorded"
+	cleanFinalizerPrefix              = "resource-consist.kusionstack.io/clean-"
+)
