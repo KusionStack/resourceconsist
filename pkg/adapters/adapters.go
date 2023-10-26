@@ -27,18 +27,24 @@ import (
 	webhookframe "kusionstack.io/resourceconsist/pkg/frame/webhook"
 )
 
+type AdapterName string
+
+const (
+	AdapterAlibabaCloudSlb = "alibabacloudslb"
+)
+
 // builtinControllerAdapterNewFuncs init here, builtin adapters' directory name as key, NewReconcileAdapterFunc as value
-var builtinControllerAdapterNewFuncs = map[string]func(c client.Client) (controllerframe.ReconcileAdapter, error){
-	"alibabacloudslb": alibabacloudslb.NewReconcileAdapter,
+var builtinControllerAdapterNewFuncs = map[AdapterName]func(c client.Client) (controllerframe.ReconcileAdapter, error){
+	AdapterAlibabaCloudSlb: alibabacloudslb.NewReconcileAdapter,
 }
 
 // builtinWebhookAdapters init here, builtin adapters' directory name as key, webhookAdapter as value
-var builtinWebhookAdapters = map[string]webhookframe.WebhookAdapter{
-	"alibabacloudslb": alibabacloudslb.NewWebhookAdapter(),
+var builtinWebhookAdapters = map[AdapterName]webhookframe.WebhookAdapter{
+	AdapterAlibabaCloudSlb: alibabacloudslb.NewWebhookAdapter(),
 }
 
 // AddBuiltinControllerAdaptersToMgr adds controller adapters of given adapterNames to manager
-func AddBuiltinControllerAdaptersToMgr(mgr manager.Manager, adapterNames []string) error {
+func AddBuiltinControllerAdaptersToMgr(mgr manager.Manager, adapterNames []AdapterName) error {
 	for _, adapterName := range adapterNames {
 		newAdapterFunc, exist := builtinControllerAdapterNewFuncs[adapterName]
 		if !exist {
@@ -57,7 +63,7 @@ func AddBuiltinControllerAdaptersToMgr(mgr manager.Manager, adapterNames []strin
 }
 
 // AddBuiltinWebhookAdaptersToMgr adds webhook adapters of given adapterNames to manager
-func AddBuiltinWebhookAdaptersToMgr(mgr manager.Manager, adapterNames []string) error {
+func AddBuiltinWebhookAdaptersToMgr(mgr manager.Manager, adapterNames []AdapterName) error {
 	for _, adapterName := range adapterNames {
 		adapter, exist := builtinWebhookAdapters[adapterName]
 		if !exist {
