@@ -18,16 +18,16 @@ Employer can be any kind, and CRD is of course can be used as Employer.
 
 Same with Employer, Employee can be any kind, and CRD is of course can be used as Employee.
 
-If an adapter implementing ReconcileAdapter and following PodOpsLifecycle, the Employee should be Pod.
+If an adapter implements ReconcileAdapter and follows PodOpsLifecycle, the Employee should be Pod.
 ## Key Interface/Struct Definitions
 ### ReconcileAdapter
 **ReconcileAdapter** is an interface specifying a set of methods as follows.
-```
+```Go
 // ReconcileOptions includes max concurrent reconciles and rate limiter,
 // max concurrent reconcile: 5 and DefaultControllerRateLimiter() will be used if ReconcileOptions not implemented.
 type ReconcileOptions interface {
 	GetRateLimiter() ratelimiter.RateLimiter
-	GetMaxConcurrentReconciles() int
+	GetMaxConcurrent() int
 }
 
 // ReconcileWatchOptions defines what employer and employee is and how controller watch
@@ -81,14 +81,14 @@ type ReconcileAdapter interface {
 	DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []IEmployee) ([]IEmployee, []IEmployee, error)
 }
 ```
-A customized controller should realize an adapter implementing the ReconcileAdapter.
+A customized controller must realize an adapter implementing the ReconcileAdapter.
 
 ReconcileOptions and ReconcileWatchOptions Interfaces can be optional implemented, dependent on whether customized controllers need specify some reconcile options like rate limiter.
 
-Service/Pod will be default Employer/Employee, if ReconcileWatchOptions not implemented. And there is a default Predicate which filters out Services without **Label "kusionstack.io/control": "true"**.
+Service/Pod will be default Employer/Employee, if ReconcileWatchOptions not implemented. And there is a default Predicate which filters out Services without Label: ```"kusionstack.io/control": "true"```.
 ### IEmployer/IEmployee
 **IEmployer/IEmployee** are interfaces defined as follows.
-```
+```Go
 type IEmployer interface {
 	GetEmployerId() string
 	GetEmployerStatuses() interface{}
@@ -105,7 +105,7 @@ type IEmployee interface {
 ### PodEmployeeStatuses
 **PodEmployeeStatuses** is a built-in struct implementing EmployeeStatus.EmployeeStatuses.
 ExtraStatus in PodEmployeeStatuses is an interface so that adapters can implement it as they wished. Normally, ExtraStatus is extra info beyond basic pod status related to backend provider, like the traffic status of backend server(pod) under load balancer.
-```
+```Go
 type PodEmployeeStatuses struct {
 	// can be set by calling SetCommonPodEmployeeStatus
 	Ip             string `json:"ip,omitempty"`
@@ -123,7 +123,7 @@ Used if PodOpsLifecycle followed.
 For a pod employed by multiple employers, there will be multiple LifecycleFinalizer should be added, and PodAvailableConditions annotation will record what employers and what finalizers are.
 
 Webhook will also record PodAvailableConditions in case of Pod creation to avoid Pod reaching service-available state if ResourceConsist controller not record PodAvailableConditions before Pod ready.
-```
+```Go
 const PodAvailableConditionsAnnotation = "pod.kusionstack.io/available-conditions" // indicate the available conditions of a pod
 
 type PodAvailableConditions struct {
@@ -142,8 +142,8 @@ func GenerateLifecycleFinalizer(employerName string) string {
 ```
 ## Key Finalizers
 ### LifecycleFinalizer
-**LifecycleFinalizer** prefixed with <mark>"prot.podopslifecycle.kusionstack.io"</mark>, is a finalizer on Employee used to following PodOpsLifecycle, removed in preparing period of PodOpsLifecycle and added in completing period of PodOpsLifecycle
-```
+**LifecycleFinalizer** prefixed with <mark>"prot.podopslifecycle.kusionstack.io"</mark>, is a finalizer on Employee used to follow PodOpsLifecycle, removed in preparing period of PodOpsLifecycle and added in completing period of PodOpsLifecycle
+```Go
 const (
 	PodOperationProtectionFinalizerPrefix = "prot.podopslifecycle.kusionstack.io"
 )
@@ -162,10 +162,10 @@ func GenerateLifecycleFinalizer(employerName string) string {
 **CleanFinalizer** is a finalizer on Employer, used to bind Employer and Employee.
 
 CleanFinalizer should be added in the first Reconcile of the resource, and be removed only when there is no more relation between Employer and Employee and during deletion.
-```
-	cleanFinalizerPrefix = "resource-consist.kusionstack.io/clean-"
+```Go
+cleanFinalizerPrefix = "resource-consist.kusionstack.io/clean-"
 	
-	cleanFlz := cleanFinalizerPrefix + employer.GetName()
+cleanFlz := cleanFinalizerPrefix + employer.GetName()
 ```
 ## Main Logic of Reconcile in ResourceConsist Controller
 ### Ensure clean finalizer of Employer
@@ -178,7 +178,7 @@ Adapters should implement these methods, and Resource Consist Controller will ca
 **kusionstack.io/resourceconsit** mainly consists of frame, experimental/adapters and adapters.
 
 The frame, ```kusionstack.io/resourceconsist/pkg/frame```, is used for adapters starting a controller, which handles Reconcile and Employer/Employees' spec&status. If you wrote an adapter in your own repo, you can import ```kusionstack.io/resourceconsist/pkg/frame/controller``` and ```kusionstack.io/resourceconsist/pkg/frame/webhook```, and call AddToMgr to start a controller.
-```
+```Go
 import (
     controllerframe "kusionstack.io/resourceconsist/pkg/frame/controller"
     webhookframe "kusionstack.io/resourceconsist/pkg/frame/webhook"
@@ -191,7 +191,7 @@ func main() {
 ```
 ### adapters
 The adapters, ```kusionstack.io/resourceconsist/pkg/adapters```, consists of built-in adapters. You can start a controller with built-in adapters just calling AddBuiltinControllerAdaptersToMgr and AddBuiltinWebhookAdaptersToMgr, passing built-in adapters' names. Currently, an aliababacloudslb adapter has released. You can use it as follows:
-```
+```Go
 import (
     "kusionstack.io/resourceconsist/pkg/adapters"
 )
@@ -241,19 +241,19 @@ The DemoResourceProviderClient is a fake client that handles backend provider re
 
 How the demo controller adapter realized will be introduced in detail as follows,
 ```DemoControllerAdapter``` was defined, including a kubernetes client and a resourceProviderClient. What included in the Adapter struct can be defined as needed.
-```
+```Go
 type DemoControllerAdapter struct {
 	client.Client
 	resourceProviderClient *DemoResourceProviderClient
 }
 ```
 Declaring that the DemoControllerAdapter implemented ```ReconcileAdapter``` and ```ReconcileLifecycleOptions```. Implementing ```RconcileAdapter``` is a must action, while ```ReconcileLifecycleOptions``` isn't, check the remarks for ```ReconcileLifecycleOptions``` in ```kusionstack.io/resourceconsist/pkg/frame/controller/types.go``` to find why.
-```
+```Go
 var _ ReconcileAdapter = &DemoControllerAdapter{}
 var _ ReconcileLifecycleOptions = &DemoControllerAdapter{}
 ```
 Following two methods for DemoControllerAdapter inplementing ```ReconcileLifecycleOptions```, defines whether DemoControllerAdapter following PodOpsLifecycle and need record employees.
-```
+```Go
 func (r *DemoControllerAdapter) FollowPodOpsLifeCycle() bool {
 	return true
 }
@@ -263,7 +263,7 @@ func (r *DemoControllerAdapter) NeedRecordEmployees() bool {
 }
 ```
 ```IEmployer``` and ```IEmployee``` are interfaces that includes several methods indicating the status employer and employee.
-```
+```Go
 type IEmployer interface {
 	GetEmployerId() string
 	GetEmployerStatuses() interface{}
@@ -294,7 +294,7 @@ type DemoPodStatus struct {
 }
 ```
 ```GetSelectedEmployeeNames``` returns all employees' names selected by employer, here is pods' names selected by service. ```GetSelectedEmployeeNames``` is used for ensuring LifecycleFinalizer and ExpectedFinalizer, so you can give it an empty return if your adapter doesn't follow PodOpsLifecycle. 
-```
+```Go
 func (r *DemoControllerAdapter) GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error) {
 	svc, ok := employer.(*corev1.Service)
 	if !ok {
@@ -316,7 +316,7 @@ func (r *DemoControllerAdapter) GetSelectedEmployeeNames(ctx context.Context, em
 }
 ```
 ```GetExpectedEmployer``` and ```GetCurrentEmployer``` defines what is expected under the spec of employer and what is current status, like the load balancer from a cloud provider. Here in the demo adapter, expected is defined by hardcode and current is retrieved from a fake resource provider ```demoResourceVipStatusInProvider```.
-```
+```Go
 func (r *DemoControllerAdapter) GetExpectedEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error) {
 	if !employer.GetDeletionTimestamp().IsZero() {
 		return nil, nil
@@ -351,7 +351,7 @@ func (r *DemoControllerAdapter) GetCurrentEmployer(ctx context.Context, employer
 }
 ```
 ```CreateEmployer/UpdateEmployer/DeleteEmployer``` handles creation/update/deletion of resources related to employer on related backend provider. Here in the demo adapter, ```CreateEmployer/UpdateEmployer/DeleteEmployer``` handles ```demoResourceVipStatusInProvider```.
-```
+```Go
 func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []IEmployer) ([]IEmployer, []IEmployer, error) {
 	if toCreates == nil || len(toCreates) == 0 {
 		return toCreates, nil, nil
@@ -422,13 +422,12 @@ func (r *DemoControllerAdapter) DeleteEmployer(ctx context.Context, employer cli
 }
 ```
 ```GetExpectedEmployee```and```GetCurrentEmployee``` defines what is expected under the spec of employer and employees and what is current status, like real servers under the load balancer from a cloud provider. Here in the demo adapter, expected is calculated from pods and current is retrieved from a fake resource provider ```demoResourceRsStatusInProvider```.
-
-```
+```Go
 // GetExpectEmployeeStatus return expect employee status
 func (r *DemoControllerAdapter) GetExpectedEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
-if !employer.GetDeletionTimestamp().IsZero() {
-return []IEmployee{}, nil
-}
+	if !employer.GetDeletionTimestamp().IsZero() {
+		return []IEmployee{}, nil
+	}
 
 	svc, ok := employer.(*corev1.Service)
 	if !ok {
@@ -474,15 +473,15 @@ return []IEmployee{}, nil
 }
 
 func (r *DemoControllerAdapter) GetCurrentEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
-var current []IEmployee
-req := &DemoResourceRsOps{}
-resp, err := r.resourceProviderClient.QueryRealServer(req)
-if err != nil {
-return current, err
-}
-if resp == nil {
-return current, fmt.Errorf("demo resource rs query resp is nil")
-}
+	var current []IEmployee
+	req := &DemoResourceRsOps{}
+	resp, err := r.resourceProviderClient.QueryRealServer(req)
+	if err != nil {
+		return current, err
+	}
+	if resp == nil {
+		return current, fmt.Errorf("demo resource rs query resp is nil")
+	}
 
 	for _, rsStatus := range resp.RsStatuses {
 		current = append(current, rsStatus)
@@ -491,8 +490,7 @@ return current, fmt.Errorf("demo resource rs query resp is nil")
 }
 ```
 ```CreateEmployees/UpdateEmployees/DeleteEmployees``` handles creation/update/deletion of resources related to employee on related backend provider. Here in the demo adapter, ```CreateEmployees/UpdateEmployees/DeleteEmployees``` handles ```demoResourceRsStatusInProvider```.
-```
-
+```Go
 func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []IEmployee) ([]IEmployee, []IEmployee, error) {
 	if toCreates == nil || len(toCreates) == 0 {
 		return toCreates, nil, nil
