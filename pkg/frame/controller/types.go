@@ -29,7 +29,7 @@ import (
 // max concurrent reconcile: 5 and DefaultControllerRateLimiter() will be used if ReconcileOptions not implemented.
 type ReconcileOptions interface {
 	GetRateLimiter() ratelimiter.RateLimiter
-	GetMaxConcurrentReconciles() int
+	GetMaxConcurrent() int
 }
 
 // ReconcileWatchOptions defines what employer and employee is and how controller watch
@@ -48,7 +48,7 @@ type ReconcileWatchOptions interface {
 }
 
 // ReconcileLifecycleOptions defines whether PodOpsLifecycle followed and
-// whether employees' LifecycleFinalizer conditions need to be Record/Erase to employer's anno.
+// whether employees' LifecycleFinalizer conditions need to be Recorded/Erased to employer's anno.
 // Actually NeedRecordEmployees only needed for those adapters that follow PodOpsLifecycle,
 // in the case of employment relationship might change and resources in backend provider might be changed by others.
 // If not implemented, the two options would be FollowPodOpsLifeCycle: true and NeedRecordEmployees: false

@@ -44,7 +44,7 @@ func AddToMgr(mgr manager.Manager, adapter ReconcileAdapter) error {
 	maxConcurrentReconciles := defaultMaxConcurrentReconciles
 	rateLimiter := workqueue.DefaultControllerRateLimiter()
 	if reconcileOptions, ok := adapter.(ReconcileOptions); ok {
-		maxConcurrentReconciles = reconcileOptions.GetMaxConcurrentReconciles()
+		maxConcurrentReconciles = reconcileOptions.GetMaxConcurrent()
 		rateLimiter = reconcileOptions.GetRateLimiter()
 	}
 	c, err := controller.New(adapter.GetControllerName(), mgr, controller.Options{
