@@ -111,7 +111,7 @@ func (r *DemoControllerAdapter) GetCurrentEmployer(ctx context.Context, employer
 }
 
 func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toCreates == nil || len(toCreates) == 0 {
+	if len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
 
@@ -134,7 +134,7 @@ func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer cli
 }
 
 func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toUpdates == nil || len(toUpdates) == 0 {
+	if len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
 
@@ -157,7 +157,7 @@ func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer cli
 }
 
 func (r *DemoControllerAdapter) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toDeletes == nil || len(toDeletes) == 0 {
+	if len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
 
@@ -246,7 +246,7 @@ func (r *DemoControllerAdapter) GetCurrentEmployee(ctx context.Context, employer
 }
 
 func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toCreates == nil || len(toCreates) == 0 {
+	if len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
 	toCreateDemoPodStatuses := make([]DemoPodStatus, len(toCreates))
@@ -270,7 +270,7 @@ func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer cl
 }
 
 func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toUpdates == nil || len(toUpdates) == 0 {
+	if len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
 
@@ -295,7 +295,7 @@ func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer cl
 }
 
 func (r *DemoControllerAdapter) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toDeletes == nil || len(toDeletes) == 0 {
+	if len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
 
