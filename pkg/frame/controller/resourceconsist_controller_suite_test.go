@@ -28,32 +28,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type DemoReconcile struct {
+type DemoControllerAdapter struct {
 	client.Client
 	resourceProviderClient *DemoResourceProviderClient
 }
 
-var _ ReconcileAdapter = &DemoReconcile{}
-var _ ReconcileLifecycleOptions = &DemoReconcile{}
+var _ ReconcileAdapter = &DemoControllerAdapter{}
+var _ ReconcileLifecycleOptions = &DemoControllerAdapter{}
 
 var needRecordEmployees = false
 
 func NewDemoReconcileAdapter(c client.Client, rc *DemoResourceProviderClient) ReconcileAdapter {
-	return &DemoReconcile{
+	return &DemoControllerAdapter{
 		Client:                 c,
 		resourceProviderClient: rc,
 	}
 }
 
-func (r *DemoReconcile) FollowPodOpsLifeCycle() bool {
+func (r *DemoControllerAdapter) FollowPodOpsLifeCycle() bool {
 	return true
 }
 
-func (r *DemoReconcile) NeedRecordEmployees() bool {
+func (r *DemoControllerAdapter) NeedRecordEmployees() bool {
 	return needRecordEmployees
 }
 
-func (r *DemoReconcile) GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error) {
+func (r *DemoControllerAdapter) GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error) {
 	svc, ok := employer.(*corev1.Service)
 	if !ok {
 		return nil, fmt.Errorf("expect employer kind is Service")
@@ -73,11 +73,11 @@ func (r *DemoReconcile) GetSelectedEmployeeNames(ctx context.Context, employer c
 	return selected, nil
 }
 
-func (r *DemoReconcile) GetControllerName() string {
+func (r *DemoControllerAdapter) GetControllerName() string {
 	return "demo-controller"
 }
 
-func (r *DemoReconcile) GetExpectedEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error) {
+func (r *DemoControllerAdapter) GetExpectedEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error) {
 	if !employer.GetDeletionTimestamp().IsZero() {
 		return nil, nil
 	}
@@ -92,7 +92,7 @@ func (r *DemoReconcile) GetExpectedEmployer(ctx context.Context, employer client
 	return expect, nil
 }
 
-func (r *DemoReconcile) GetCurrentEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error) {
+func (r *DemoControllerAdapter) GetCurrentEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error) {
 	var current []IEmployer
 
 	req := &DemoResourceVipOps{}
@@ -110,7 +110,7 @@ func (r *DemoReconcile) GetCurrentEmployer(ctx context.Context, employer client.
 	return current, nil
 }
 
-func (r *DemoReconcile) CreateEmployer(ctx context.Context, employer client.Object, toCreates []IEmployer) ([]IEmployer, []IEmployer, error) {
+func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []IEmployer) ([]IEmployer, []IEmployer, error) {
 	if toCreates == nil || len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
@@ -133,7 +133,7 @@ func (r *DemoReconcile) CreateEmployer(ctx context.Context, employer client.Obje
 	return toCreates, nil, nil
 }
 
-func (r *DemoReconcile) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []IEmployer) ([]IEmployer, []IEmployer, error) {
+func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []IEmployer) ([]IEmployer, []IEmployer, error) {
 	if toUpdates == nil || len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
@@ -156,7 +156,7 @@ func (r *DemoReconcile) UpdateEmployer(ctx context.Context, employer client.Obje
 	return toUpdates, nil, nil
 }
 
-func (r *DemoReconcile) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []IEmployer) ([]IEmployer, []IEmployer, error) {
+func (r *DemoControllerAdapter) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []IEmployer) ([]IEmployer, []IEmployer, error) {
 	if toDeletes == nil || len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
@@ -180,7 +180,7 @@ func (r *DemoReconcile) DeleteEmployer(ctx context.Context, employer client.Obje
 }
 
 // GetExpectEmployeeStatus return expect employee status
-func (r *DemoReconcile) GetExpectedEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
+func (r *DemoControllerAdapter) GetExpectedEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
 	if !employer.GetDeletionTimestamp().IsZero() {
 		return []IEmployee{}, nil
 	}
@@ -228,7 +228,7 @@ func (r *DemoReconcile) GetExpectedEmployee(ctx context.Context, employer client
 	return expected[:expectIdx], nil
 }
 
-func (r *DemoReconcile) GetCurrentEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
+func (r *DemoControllerAdapter) GetCurrentEmployee(ctx context.Context, employer client.Object) ([]IEmployee, error) {
 	var current []IEmployee
 	req := &DemoResourceRsOps{}
 	resp, err := r.resourceProviderClient.QueryRealServer(req)
@@ -245,7 +245,7 @@ func (r *DemoReconcile) GetCurrentEmployee(ctx context.Context, employer client.
 	return current, nil
 }
 
-func (r *DemoReconcile) CreateEmployees(ctx context.Context, employer client.Object, toCreates []IEmployee) ([]IEmployee, []IEmployee, error) {
+func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []IEmployee) ([]IEmployee, []IEmployee, error) {
 	if toCreates == nil || len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
@@ -269,7 +269,7 @@ func (r *DemoReconcile) CreateEmployees(ctx context.Context, employer client.Obj
 	return toCreates, nil, nil
 }
 
-func (r *DemoReconcile) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []IEmployee) ([]IEmployee, []IEmployee, error) {
+func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []IEmployee) ([]IEmployee, []IEmployee, error) {
 	if toUpdates == nil || len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
@@ -294,7 +294,7 @@ func (r *DemoReconcile) UpdateEmployees(ctx context.Context, employer client.Obj
 	return toUpdates, nil, nil
 }
 
-func (r *DemoReconcile) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []IEmployee) ([]IEmployee, []IEmployee, error) {
+func (r *DemoControllerAdapter) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []IEmployee) ([]IEmployee, []IEmployee, error) {
 	if toDeletes == nil || len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
