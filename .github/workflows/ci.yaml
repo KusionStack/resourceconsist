@@ -37,6 +37,7 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
       - name: Run Unit Tests
         run: |
+          go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
           go test ./...
           git status
       - name: Check diff
