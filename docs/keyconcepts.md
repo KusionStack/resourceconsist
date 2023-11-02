@@ -1,15 +1,15 @@
 # Key Concepts
-## ?Employer
+## 🤠Employer
 **Employer** is the entity responsible for managing and coordinating the utilization of another resource, similar to how a service selects and controls pods.
 
 Employer can be any kind, and CRD is of course can be used as Employer.
-## ???Employee
+## 👩‍💻Employee
 **Employee** is the resource managed by another resource, like pods selected by service.
 
 Same with Employer, Employee can be any kind, and CRD is of course can be used as Employee.
 
 >If an adapter implements ReconcileAdapter and follows PodOpsLifecycle, the Employee should be Pod.
-# ?Key Interface/Struct Definitions
+# ✨Key Interface/Struct Definitions
 ## ReconcileAdapter
 **ReconcileAdapter** is an interface specifying a set of methods as follows.
 ```Go
@@ -130,7 +130,7 @@ func GenerateLifecycleFinalizer(employerName string) string {
 	return v1alpha1.PodOperationProtectionFinalizerPrefix + "/" + hex.EncodeToString(b[:])[8:24]
 }
 ```
-# ?Key Finalizers
+# ✨Key Finalizers
 ## LifecycleFinalizer
 **LifecycleFinalizer** prefixed with ```prot.podopslifecycle.kusionstack.io```, is a finalizer on Employee used to follow PodOpsLifecycle, removed in preparing period of PodOpsLifecycle and added in completing period of PodOpsLifecycle
 ```Go
