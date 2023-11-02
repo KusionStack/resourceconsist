@@ -1,6 +1,6 @@
 # Contributing to ResourceConsist
 
-Welcome to KusionStack ResourceConsist! ? ? ?
+Welcome to KusionStack ResourceConsist! 👋 👋 👋
 
 We're excited that you're interested in contributing. Please take a moment to read through this guide to understand how you can contribute to this project.
 
