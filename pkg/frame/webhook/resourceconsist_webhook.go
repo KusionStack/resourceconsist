@@ -33,6 +33,7 @@ import (
 	"kusionstack.io/resourceconsist/pkg/utils"
 )
 
+// AddToMgr is only necessary for controllers following PodOpsLifecycle
 func AddToMgr(mgr manager.Manager, adapter WebhookAdapter) error {
 	server := mgr.GetWebhookServer()
 	logger := mgr.GetLogger().WithName("webhook")
