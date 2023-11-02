@@ -215,6 +215,7 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		}
 	}
 
+	// todo, replace return err to return requeue, requeue interval defined by adapter
 	if syncEmployerFailedExist || syncEmployeeFailedExist {
 		r.recorder.Eventf(employer, corev1.EventTypeNormal, "ReconcileFailed", "employer or employees synced failed exist")
 		return reconcile.Result{}, fmt.Errorf("employer or employees synced failed exist")
