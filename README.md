@@ -174,6 +174,8 @@ Adapters should implement these methods, and Resource Consist Controller will ca
 **kusionstack.io/resourceconsit** mainly consists of frame, experimental/adapters and adapters.
 
 The frame, ```kusionstack.io/resourceconsist/pkg/frame```, is used for adapters starting a controller, which handles Reconcile and Employer/Employees' spec&status. If you wrote an adapter in your own repo, you can import ```kusionstack.io/resourceconsist/pkg/frame/controller``` and ```kusionstack.io/resourceconsist/pkg/frame/webhook```, and call AddToMgr to start a controller.
+
+Btw, webhookAdapter is only necessary to be implemented for controllers following PodOpsLifecycle.
 ```Go
 import (
     controllerframe "kusionstack.io/resourceconsist/pkg/frame/controller"
