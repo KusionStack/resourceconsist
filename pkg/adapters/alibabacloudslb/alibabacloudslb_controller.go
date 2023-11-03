@@ -19,6 +19,7 @@ package alibabacloudslb
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -29,6 +30,7 @@ import (
 
 var _ controllerframe.ReconcileAdapter = &SlbControllerAdapter{}
 var _ controllerframe.ReconcileLifecycleOptions = &SlbControllerAdapter{}
+var _ controllerframe.ReconcileRequeueOptions = &SlbControllerAdapter{}
 
 type SlbControllerAdapter struct {
 	client.Client
@@ -48,6 +50,10 @@ func NewReconcileAdapter(c client.Client) (controllerframe.ReconcileAdapter, err
 		Client:    c,
 		slbClient: slbClient,
 	}, nil
+}
+
+func (r *SlbControllerAdapter) EmployeeSyncRequeueInterval() time.Duration {
+	return 100 * time.Millisecond
 }
 
 func (r *SlbControllerAdapter) FollowPodOpsLifeCycle() bool {

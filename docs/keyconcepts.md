@@ -1,6 +1,7 @@
 # Key Concepts
 ## 🤠Employer
-**Employer** is the entity responsible for managing and coordinating the utilization of another resource, similar to how a service selects and controls pods.
+**Employer** is the entity responsible for managing and coordinating the utilization of another resource, 
+similar to how a service selects and controls pods.
 
 Employer can be any kind, and CRD is of course can be used as Employer.
 ## 👩‍💻Employee
@@ -34,7 +35,6 @@ type ReconcileWatchOptions interface {
 	EmployerPredicates() predicate.Funcs
 	EmployeePredicates() predicate.Funcs
 }
-
 
 // ReconcileLifecycleOptions defines whether PodOpsLifecycle followed and
 // whether employees' LifecycleFinalizer conditions need to be Recorded/Erased to employer's anno.
@@ -73,9 +73,11 @@ type ReconcileAdapter interface {
 ```
 A customized controller must realize an adapter implementing the ReconcileAdapter.
 
-ReconcileOptions and ReconcileWatchOptions Interfaces can be optional implemented, dependent on whether customized controllers need specify some reconcile options like rate limiter.
+ReconcileOptions and ReconcileWatchOptions Interfaces can be optional implemented, dependent on whether customized 
+controllers need specify some reconcile options like rate limiter.
 
->Service/Pod will be default Employer/Employee, if ReconcileWatchOptions not implemented. And there is a default Predicate which filters out Services without Label: ```"kusionstack.io/control": "true"```.
+>Service/Pod will be default Employer/Employee, if ReconcileWatchOptions not implemented. And there is a default 
+>Predicate which filters out Services without Label: ```"kusionstack.io/control": "true"```.
 ## IEmployer/IEmployee
 **IEmployer/IEmployee** are interfaces defined as follows.
 ```Go
@@ -94,7 +96,9 @@ type IEmployee interface {
 ```
 ## PodEmployeeStatuses
 **PodEmployeeStatuses** is a built-in struct implementing EmployeeStatus.EmployeeStatuses.
-ExtraStatus in PodEmployeeStatuses is an interface so that adapters can implement it as they wished. Normally, ExtraStatus is extra info beyond basic pod status related to backend provider, like the traffic status of backend server(pod) under load balancer.
+ExtraStatus in PodEmployeeStatuses is an interface so that adapters can implement it as they wished. Normally, 
+ExtraStatus is extra info beyond basic pod status related to backend provider, like the traffic status of backend 
+server(pod) under load balancer.
 ```Go
 type PodEmployeeStatuses struct {
 	// can be set by calling SetCommonPodEmployeeStatus
@@ -108,11 +112,14 @@ type PodEmployeeStatuses struct {
 ## PodAvailableConditions
 Used if PodOpsLifecycle followed.
 
-**PodAvailableConditions** is an annotation on pod, indicating what finalizer should be added to achieve service-available state.
+**PodAvailableConditions** is an annotation on pod, indicating what finalizer should be added to achieve 
+[service-available state](https://kusionstack.io/docs/operating/concepts/podopslifecycle).
 
-For a pod employed by multiple employers, there will be multiple LifecycleFinalizer should be added, and PodAvailableConditions annotation will record what employers and what finalizers are.
+For a pod employed by multiple employers, there will be multiple LifecycleFinalizer should be added, and 
+PodAvailableConditions annotation will record what employers and what finalizers are.
 
-Webhook will also record PodAvailableConditions in case of Pod creation to avoid Pod reaching service-available state if ResourceConsist controller not record PodAvailableConditions before Pod ready.
+Webhook will also record PodAvailableConditions in case of Pod creation to avoid Pod reaching service-available 
+state if ResourceConsist controller not record PodAvailableConditions before Pod ready.
 ```Go
 const PodAvailableConditionsAnnotation = "pod.kusionstack.io/available-conditions" // indicate the available conditions of a pod
 
@@ -132,7 +139,8 @@ func GenerateLifecycleFinalizer(employerName string) string {
 ```
 # ✨Key Finalizers
 ## LifecycleFinalizer
-**LifecycleFinalizer** prefixed with ```prot.podopslifecycle.kusionstack.io```, is a finalizer on Employee used to follow PodOpsLifecycle, removed in preparing period of PodOpsLifecycle and added in completing period of PodOpsLifecycle
+**LifecycleFinalizer** prefixed with ```prot.podopslifecycle.kusionstack.io```, is a finalizer on Employee used to 
+follow PodOpsLifecycle, removed in preparing period of PodOpsLifecycle and added in completing period of PodOpsLifecycle
 ```Go
 const (
 	PodOperationProtectionFinalizerPrefix = "prot.podopslifecycle.kusionstack.io"
@@ -151,7 +159,8 @@ func GenerateLifecycleFinalizer(employerName string) string {
 ## CleanFinalizer
 **CleanFinalizer** is a finalizer on Employer, used to bind Employer and Employee.
 
-CleanFinalizer should be added in the first Reconcile of the resource, and be removed only when there is no more relation between Employer and Employee and during deletion.
+CleanFinalizer should be added in the first Reconcile of the resource, and be removed only when there is no more 
+relation between Employer and Employee and during deletion.
 ```Go
 cleanFinalizerPrefix = "resource-consist.kusionstack.io/clean-"
 	
