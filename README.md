@@ -1,5 +1,5 @@
 # ResourceConsist
-**ResourceConsist** ([official site](https://kusionstack.io/docs/operating/manuals/resourceconsist)) aims to make a 
+[**ResourceConsist**](https://kusionstack.io/docs/operating/manuals/resourceconsist) aims to make a 
 customized controller can be realized easily, and offering the ability of following 
 [**PodOpsLifecycle**](https://kusionstack.io/docs/operating/concepts/podopslifecycle) for controllers.
 
