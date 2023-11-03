@@ -3,7 +3,7 @@
 
 The only thing users need to do to realize a customized controller is writing an adapter implementing [ReconcileAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/controller/types.go#L61). For controllers following **PodOpsLifecycle**, [WebhookAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/webhook/types.go#L26) is also necessary to be implemented.
 
-todo: add an image to illustrate what this is and how it works
+<img src="docs/resourceconsist.png" width="500" height="400"/>
 
 👉 Please refer to [key concepts](https://github.com/KusionStack/resourceconsist/tree/main/docs/keyconcepts.md) to find out what 🤠**Employer**/👩‍💻**Employee**/... are.
 
