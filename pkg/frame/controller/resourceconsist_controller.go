@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -215,10 +214,12 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		}
 	}
 
-	// todo, replace return err to return requeue, requeue interval defined by adapter
 	if syncEmployerFailedExist || syncEmployeeFailedExist {
 		r.recorder.Eventf(employer, corev1.EventTypeNormal, "ReconcileFailed", "employer or employees synced failed exist")
-
+		requeueOptions, requeueOptionsImplemented := r.adapter.(ReconcileRequeueOptions)
+		if requeueOptionsImplemented {
+			return reconcile.Result{RequeueAfter: requeueOptions.EmployeeSyncRequeueInterval()}, nil
+		}
 		return reconcile.Result{}, fmt.Errorf("employer or employees synced failed exist")
 	}
 
