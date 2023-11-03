@@ -46,6 +46,11 @@ type ReconcileLifecycleOptions interface {
 	NeedRecordEmployees() bool
 }
 
+type ReconcileRequeueOptions interface {
+    // EmployeeSyncRequeueInterval returns requeue time interval if employee synced failed but no err
+    EmployeeSyncRequeueInterval() time.Duration
+}
+
 // ReconcileAdapter is the interface that customized controllers should implement.
 type ReconcileAdapter interface {
 	GetControllerName() string
