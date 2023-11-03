@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -55,6 +56,11 @@ type ReconcileWatchOptions interface {
 type ReconcileLifecycleOptions interface {
 	FollowPodOpsLifeCycle() bool
 	NeedRecordEmployees() bool
+}
+
+type ReconcileRequeueOptions interface {
+	// EmployeeSyncRequeueInterval returns requeue time interval if employee synced failed but no err
+	EmployeeSyncRequeueInterval() time.Duration
 }
 
 // ReconcileAdapter is the interface that customized controllers should implement.
