@@ -204,7 +204,7 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 		succCreate, succDelete, succUpdate, toCudEmployees.Unchanged)
 
 	lifecycleOptions, lifecycleOptionsImplemented := r.adapter.(ReconcileLifecycleOptions)
-	needRecordEmployees := lifecycleOptionsImplemented && lifecycleOptions.FollowPodOpsLifeCycle() && lifecycleOptions.NeedRecordEmployees()
+	needRecordEmployees := lifecycleOptionsImplemented && lifecycleOptions.FollowPodOpsLifeCycle() && lifecycleOptions.NeedRecordLifecycleFinalizerCondition()
 	if needRecordEmployees {
 		if employer.GetAnnotations()[lifecycleFinalizerRecordedAnnoKey] != "" {
 			selectedEmployees, err := r.adapter.GetSelectedEmployeeNames(ctx, employer)
@@ -270,8 +270,11 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.Object) (bool, error) {
 	// employee is not pod or not follow PodOpsLifecycle
 	watchOptions, watchOptionsImplemented := r.adapter.(ReconcileWatchOptions)
+	if watchOptionsImplemented && !isPod(watchOptions.NewEmployee()) {
+		return true, nil
+	}
 	lifecycleOptions, lifecycleOptionsImplemented := r.adapter.(ReconcileLifecycleOptions)
-	if (lifecycleOptionsImplemented && !lifecycleOptions.FollowPodOpsLifeCycle()) || (watchOptionsImplemented && !isPod(watchOptions.NewEmployee())) {
+	if lifecycleOptionsImplemented && !lifecycleOptions.FollowPodOpsLifeCycle() {
 		return true, nil
 	}
 
@@ -280,9 +283,51 @@ func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.O
 		return false, fmt.Errorf("get selected employees' names failed, err: %s", err.Error())
 	}
 
+	if lifecycleOptionsImplemented && (lifecycleOptions.NeedRecordExpectedFinalizerCondition() ||
+		lifecycleOptions.NeedRecordLifecycleFinalizerCondition()) {
+		return r.ensureExpectedFinalizerNeedRecord(ctx, employer, selectedEmployeeNames)
+	} else {
+		return r.ensureExpectedFinalizerNotNeedRecord(ctx, employer, selectedEmployeeNames)
+	}
+
+}
+
+func (r *Consist) ensureExpectedFinalizerNotNeedRecord(ctx context.Context, employer client.Object, selectedEmployeeNames []string) (bool, error) {
+	var toAdd, toDelete []PodExpectedFinalizerOps
+	if !employer.GetDeletionTimestamp().IsZero() {
+		for _, podName := range selectedEmployeeNames {
+			toDelete = append(toDelete, PodExpectedFinalizerOps{
+				Name:    podName,
+				Succeed: false,
+			})
+		}
+		errPatchEmployees := r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
+		for _, deleteExpectedFinalizerOps := range toDelete {
+			if !deleteExpectedFinalizerOps.Succeed {
+				return false, errPatchEmployees
+			}
+		}
+		return true, errPatchEmployees
+	}
+	for _, podName := range selectedEmployeeNames {
+		toAdd = append(toAdd, PodExpectedFinalizerOps{
+			Name:    podName,
+			Succeed: false,
+		})
+	}
+	errPatchEmployees := r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
+	for _, deleteExpectedFinalizerOps := range toDelete {
+		if deleteExpectedFinalizerOps.Succeed {
+			return true, errPatchEmployees
+		}
+	}
+	return false, errPatchEmployees
+}
+
+func (r *Consist) ensureExpectedFinalizerNeedRecord(ctx context.Context, employer client.Object, selectedEmployeeNames []string) (bool, error) {
+	var toAdd, toDelete []PodExpectedFinalizerOps
 	addedExpectedFinalizerPodNames := strings.Split(employer.GetAnnotations()[expectedFinalizerAddedAnnoKey], ",")
 
-	var toAdd, toDelete []PodExpectedFinalizerOps
 	if !employer.GetDeletionTimestamp().IsZero() {
 		toDeleteNames := sets.NewString(addedExpectedFinalizerPodNames...).Insert(selectedEmployeeNames...).List()
 		for _, podName := range toDeleteNames {
@@ -331,7 +376,7 @@ func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.O
 		}
 	}
 
-	_ = r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
+	errPatchEmployees := r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
 	var succDeletedNames []string
 	for _, deleteExpectFinalizerOps := range toDelete {
 		if deleteExpectFinalizerOps.Succeed {
@@ -361,7 +406,8 @@ func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.O
 	}
 	annos[expectedFinalizerAddedAnnoKey] = strings.Join(addedNames, ",")
 	employer.SetAnnotations(annos)
-	return len(addedNames) == 0, r.Client.Patch(ctx, employer, patch)
+	errPatchEmployer := r.Client.Patch(ctx, employer, patch)
+	return len(addedNames) == 0, errors2.NewAggregate([]error{errPatchEmployees, errPatchEmployer})
 }
 
 func (r *Consist) patchPodExpectedFinalizer(ctx context.Context, employer client.Object, toAdd, toDelete []PodExpectedFinalizerOps) error {

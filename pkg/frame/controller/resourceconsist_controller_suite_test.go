@@ -49,7 +49,11 @@ func (r *DemoControllerAdapter) FollowPodOpsLifeCycle() bool {
 	return true
 }
 
-func (r *DemoControllerAdapter) NeedRecordEmployees() bool {
+func (r *DemoControllerAdapter) NeedRecordExpectedFinalizerCondition() bool {
+	return true
+}
+
+func (r *DemoControllerAdapter) NeedRecordLifecycleFinalizerCondition() bool {
 	return needRecordEmployees
 }
 
