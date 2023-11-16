@@ -48,17 +48,20 @@ type ReconcileWatchOptions interface {
 	EmployeePredicates() predicate.Funcs
 }
 
-// ReconcileLifecycleOptions defines whether PodOpsLifecycle followed,
-// whether employees' ExpectedFinalizer conditions need to be Recorded/Erased to employer's anno
+type ExpectedFinalizerRecordOptions interface {
+	// NeedRecordExpectedFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,
+	// in the case of employment relationship might change(like label/selector changes) and the compensation logic
+	// of kusionstack.io/operating can't handle the changes.
+	// in most cases, this option is not needed.
+	NeedRecordExpectedFinalizerCondition() bool
+}
+
+// ReconcileLifecycleOptions defines whether PodOpsLifecycle followed
 // and whether employees' LifecycleFinalizer conditions need to be Recorded/Erased to employer's anno.
 // If not implemented, the default options would be:
-// FollowPodOpsLifeCycle: true and NeedRecordExpectedFinalizerCondition/NeedRecordLifecycleFinalizerCondition: false
+// FollowPodOpsLifeCycle: true and NeedRecordLifecycleFinalizerCondition: false
 type ReconcileLifecycleOptions interface {
 	FollowPodOpsLifeCycle() bool
-
-	// NeedRecordExpectedFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,
-	// in the case of employment relationship might change, like selector changes.
-	NeedRecordExpectedFinalizerCondition() bool
 
 	// NeedRecordLifecycleFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,
 	// in the case of employment relationship might change and resources in backend provider might be changed by others.

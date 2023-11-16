@@ -49,6 +49,7 @@ func (r *DemoControllerAdapter) FollowPodOpsLifeCycle() bool {
 	return true
 }
 
+// NeedRecordExpectedFinalizerCondition returns true here as we regard kusionstack.io/operating's compensation logic not works.
 func (r *DemoControllerAdapter) NeedRecordExpectedFinalizerCondition() bool {
 	return true
 }

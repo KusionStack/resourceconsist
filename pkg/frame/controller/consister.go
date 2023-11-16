@@ -283,8 +283,8 @@ func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.O
 		return false, fmt.Errorf("get selected employees' names failed, err: %s", err.Error())
 	}
 
-	if lifecycleOptionsImplemented && (lifecycleOptions.NeedRecordExpectedFinalizerCondition() ||
-		lifecycleOptions.NeedRecordLifecycleFinalizerCondition()) {
+	recordOptions, recordOptionsImplemented := r.adapter.(ExpectedFinalizerRecordOptions)
+	if recordOptionsImplemented && recordOptions.NeedRecordExpectedFinalizerCondition() {
 		return r.ensureExpectedFinalizerNeedRecord(ctx, employer, selectedEmployeeNames)
 	} else {
 		return r.ensureExpectedFinalizerNotNeedRecord(ctx, employer, selectedEmployeeNames)
