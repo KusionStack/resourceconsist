@@ -60,10 +60,6 @@ func (r *SlbControllerAdapter) FollowPodOpsLifeCycle() bool {
 	return true
 }
 
-func (r *SlbControllerAdapter) NeedRecordExpectedFinalizerCondition() bool {
-	return true
-}
-
 func (r *SlbControllerAdapter) NeedRecordLifecycleFinalizerCondition() bool {
 	return true
 }
