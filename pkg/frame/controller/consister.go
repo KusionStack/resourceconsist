@@ -103,8 +103,7 @@ func (r *Consist) diffEmployer(expectEmployer, currentEmployer []IEmployer) (ToC
 		}
 	}
 
-	// todo, log level
-	r.logger.Info("employer info",
+	r.logger.V(5).Info("employer info",
 		"toCreate", toCreate[:toCreateIdx],
 		"toUpdate", toUpdate[:toUpdateIdx],
 		"toDelete", toDelete[:toDeleteIdx],
@@ -164,8 +163,7 @@ func (r *Consist) diffEmployees(expectEmployees, currentEmployees []IEmployee) (
 		}
 	}
 
-	// todo, log level
-	r.logger.Info("employee info",
+	r.logger.V(5).Info("employee info",
 		"toCreate", toCreate[:toCreateIdx],
 		"toUpdate", toUpdate[:toUpdateIdx],
 		"toDelete", toDelete[:toDeleteIdx],

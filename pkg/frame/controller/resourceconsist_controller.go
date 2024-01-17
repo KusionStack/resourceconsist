@@ -105,7 +105,7 @@ func NewReconcile(mgr manager.Manager, reconcileAdapter ReconcileAdapter) *Consi
 		Client:   mgr.GetClient(),
 		scheme:   mgr.GetScheme(),
 		adapter:  reconcileAdapter,
-		logger:   logf.Log.WithName(reconcileAdapter.GetControllerName()),
+		logger:   logf.Log.WithName(reconcileAdapter.GetControllerName()).V(4),
 		recorder: recorder,
 	}
 }
@@ -133,81 +133,92 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		r.logger.Error(err, "get employer failed")
+		r.logger.Error(err, fmt.Sprintf("get %s: %s/%s failed", employer.GetObjectKind().GroupVersionKind().Kind,
+			request.Namespace, request.Name))
 		return reconcile.Result{}, err
 	}
 
 	// ensure employer-clean finalizer firstly, employer-clean finalizer should be cleaned at the end
 	updated, err := r.ensureEmployerCleanFlz(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "add employer clean finalizer failed")
+		r.logger.Error(err, fmt.Sprintf("add employer-clean finalizer for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "ensureEmployerCleanFlzFailed",
-			"add employer clean finalizer failed: %s", err.Error())
+			"add employer-clean finalizer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	if updated {
-		r.logger.Info("add employer clean finalizer")
+		r.logger.Info(fmt.Sprintf("add employer-clean finalizer for %s: %s/%s",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeNormal, "ensureEmployerCleanFlzSucceed",
-			"add employer clean finalizer")
+			"add employer-clean finalizer")
 		return reconcile.Result{}, nil
 	}
 
 	isExpectedClean, err := r.ensureExpectedFinalizer(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "ensure employees expected finalizer failed")
+		r.logger.Error(err, fmt.Sprintf("ensure employees' expected finalizer failed for %s: %s/%s",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "ensureExpectedFinalizerFailed",
-			"ensure employees expected finalizer failed: %s", err.Error())
+			"ensure employees' expected finalizer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 
-	expectEmployer, err := r.adapter.GetExpectedEmployer(ctx, employer)
+	expectedEmployer, err := r.adapter.GetExpectedEmployer(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "get expect employer failed")
+		r.logger.Error(err, fmt.Sprintf("get expected employer for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "GetExpectEmployerFailed",
-			"get expect employer status failed: %s", err.Error())
+			"get expect employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	currentEmployer, err := r.adapter.GetCurrentEmployer(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "get current employer failed")
+		r.logger.Error(err, fmt.Sprintf("get current employer for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "GetCurrentEmployerFailed",
-			"get current employer status failed: %s", err.Error())
+			"get current employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
-	isCleanEmployer, syncEmployerFailedExist, err := r.syncEmployer(ctx, employer, expectEmployer, currentEmployer)
+	isCleanEmployer, syncEmployerFailedExist, err := r.syncEmployer(ctx, employer, expectedEmployer, currentEmployer)
 	if err != nil {
-		r.logger.Error(err, "sync employer status failed")
+		r.logger.Error(err, fmt.Sprintf("sync employer for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "syncEmployerFailed",
-			"sync employer status failed: %s", err.Error())
+			"sync employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 
 	expectEmployees, err := r.adapter.GetExpectedEmployee(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "get expect employees failed")
+		r.logger.Error(err, fmt.Sprintf("get expect employees for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "GetExpectEmployeeFailed",
-			"get expect employees status failed: %s", err.Error())
+			"get expect employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	currentEmployees, err := r.adapter.GetCurrentEmployee(ctx, employer)
 	if err != nil {
-		r.logger.Error(err, "get current employees failed")
+		r.logger.Error(err, fmt.Sprintf("get current employees for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "GetCurrentEmployeeFailed",
-			"get current employees status failed: %s", err.Error())
+			"get current employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	isCleanEmployee, syncEmployeeFailedExist, err := r.syncEmployees(ctx, employer, expectEmployees, currentEmployees)
 	if err != nil {
-		r.logger.Error(err, "sync employees status failed")
+		r.logger.Error(err, fmt.Sprintf("sync employees for %s: %s/%s failed",
+			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 		r.recorder.Eventf(employer, corev1.EventTypeWarning, "syncEmployeesFailed",
-			"sync employees status failed: %s", err.Error())
+			"sync employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 
 	if isCleanEmployer && isCleanEmployee && isExpectedClean && !employer.GetDeletionTimestamp().IsZero() {
 		err = r.cleanEmployerCleanFinalizer(ctx, employer)
 		if err != nil {
-			r.logger.Error(err, "clean employer clean-finalizer failed")
+			r.logger.Error(err, fmt.Sprintf("clean employer clean-finalizer for %s: %s/%s failed",
+				employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
 			r.recorder.Eventf(employer, corev1.EventTypeWarning, "cleanEmployerCleanFinalizerFailed",
 				"clean employer clean-finalizer failed: %s", err.Error())
 			return reconcile.Result{}, err

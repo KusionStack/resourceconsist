@@ -480,7 +480,7 @@ var _ = Describe("resource-consist-controller", func() {
 				}
 				for _, evt := range events.Items {
 					if evt.Reason == "syncEmployerFailed" &&
-						evt.Message == "sync employer status failed: syncCreate failed, err: fake err" {
+						evt.Message == "sync employer failed: syncCreate failed, err: fake err" {
 						return true
 					}
 				}
@@ -529,7 +529,7 @@ var _ = Describe("resource-consist-controller", func() {
 				}
 				for _, evt := range events.Items {
 					if evt.Reason == "syncEmployeesFailed" &&
-						evt.Message == "sync employees status failed: syncCreate failed, err: fake err" {
+						evt.Message == "sync employees failed: syncCreate failed, err: fake err" {
 						return true
 					}
 				}
