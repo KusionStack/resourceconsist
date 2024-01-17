@@ -36,7 +36,7 @@ import (
 // AddToMgr is only necessary for controllers following PodOpsLifecycle
 func AddToMgr(mgr manager.Manager, adapter WebhookAdapter) error {
 	server := mgr.GetWebhookServer()
-	logger := mgr.GetLogger().WithName("webhook")
+	logger := mgr.GetLogger().WithName("webhook").V(3)
 
 	if len(adapter.Name()) == 0 {
 		logger.Info("Skip registering handlers without a name")
@@ -49,7 +49,7 @@ func AddToMgr(mgr manager.Manager, adapter WebhookAdapter) error {
 	}
 	decoder, _ := admission.NewDecoder(mgr.GetScheme())
 	server.Register(path, &webhook.Admission{Handler: NewPodResourceConsistWebhook(mgr.GetClient(), decoder, adapter)})
-	logger.V(3).Info("Registered webhook handler", "path", path)
+	logger.Info("Registered webhook handler", "path", path)
 
 	return nil
 }
