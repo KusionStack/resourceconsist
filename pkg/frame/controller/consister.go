@@ -36,27 +36,35 @@ import (
 	"kusionstack.io/resourceconsist/pkg/utils"
 )
 
-func (r *Consist) syncEmployer(ctx context.Context, employer client.Object, expectEmployerStatus, currentEmployerStatus []IEmployer) (bool, bool, error) {
+func (r *Consist) syncEmployer(ctx context.Context, employer client.Object, expectEmployerStatus, currentEmployerStatus []IEmployer) (bool, bool, CUDEmployerResults, error) {
 	toCudEmployer, err := r.diffEmployer(expectEmployerStatus, currentEmployerStatus)
 	if err != nil {
-		return false, false, fmt.Errorf("diff employer failed, err: %s", err.Error())
+		return false, false, CUDEmployerResults{}, fmt.Errorf("diff employer failed, err: %s", err.Error())
 	}
-	_, failCreate, err := r.adapter.CreateEmployer(ctx, employer, toCudEmployer.ToCreate)
+	succCreate, failCreate, err := r.adapter.CreateEmployer(ctx, employer, toCudEmployer.ToCreate)
 	if err != nil {
-		return false, false, fmt.Errorf("syncCreate failed, err: %s", err.Error())
+		return false, false, CUDEmployerResults{}, fmt.Errorf("syncCreate failed, err: %s", err.Error())
 	}
-	_, failUpdate, err := r.adapter.UpdateEmployer(ctx, employer, toCudEmployer.ToUpdate)
+	succUpdate, failUpdate, err := r.adapter.UpdateEmployer(ctx, employer, toCudEmployer.ToUpdate)
 	if err != nil {
-		return false, false, fmt.Errorf("syncUpdate failed, err: %s", err.Error())
+		return false, false, CUDEmployerResults{}, fmt.Errorf("syncUpdate failed, err: %s", err.Error())
 	}
-	_, failDelete, err := r.adapter.DeleteEmployer(ctx, employer, toCudEmployer.ToDelete)
+	succDelete, failDelete, err := r.adapter.DeleteEmployer(ctx, employer, toCudEmployer.ToDelete)
 	if err != nil {
-		return false, false, fmt.Errorf("syncDelete failed, err: %s", err.Error())
+		return false, false, CUDEmployerResults{}, fmt.Errorf("syncDelete failed, err: %s", err.Error())
 	}
 
 	isClean := len(toCudEmployer.Unchanged) == 0 && len(toCudEmployer.ToCreate) == 0 && len(toCudEmployer.ToUpdate) == 0 && len(failDelete) == 0
 	cudFailedExist := len(failCreate) > 0 || len(failUpdate) > 0 || len(failDelete) > 0
-	return isClean, cudFailedExist, nil
+	return isClean, cudFailedExist, CUDEmployerResults{
+		SuccCreated: succCreate,
+		FailCreated: failCreate,
+		SuccUpdated: succUpdate,
+		FailUpdated: failUpdate,
+		SuccDeleted: succDelete,
+		FailDeleted: failDelete,
+		Unchanged:   toCudEmployer.Unchanged,
+	}, nil
 }
 
 func (r *Consist) diffEmployer(expectEmployer, currentEmployer []IEmployer) (ToCUDEmployer, error) {
@@ -179,24 +187,24 @@ func (r *Consist) diffEmployees(expectEmployees, currentEmployees []IEmployee) (
 	}, nil
 }
 
-func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, expectEmployees, currentEmployees []IEmployee) (bool, bool, error) {
+func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, expectEmployees, currentEmployees []IEmployee) (bool, bool, CUDEmployeeResults, error) {
 	// get expect/current employees diffEmployees
 	toCudEmployees, err := r.diffEmployees(expectEmployees, currentEmployees)
 	if err != nil {
-		return false, false, err
+		return false, false, CUDEmployeeResults{}, err
 	}
 
 	succCreate, failCreate, err := r.adapter.CreateEmployees(ctx, employer, toCudEmployees.ToCreate)
 	if err != nil {
-		return false, false, fmt.Errorf("syncCreate failed, err: %s", err.Error())
+		return false, false, CUDEmployeeResults{}, fmt.Errorf("syncCreate failed, err: %s", err.Error())
 	}
 	succUpdate, failUpdate, err := r.adapter.UpdateEmployees(ctx, employer, toCudEmployees.ToUpdate)
 	if err != nil {
-		return false, false, fmt.Errorf("syncUpdate failed, err: %s", err.Error())
+		return false, false, CUDEmployeeResults{}, fmt.Errorf("syncUpdate failed, err: %s", err.Error())
 	}
 	succDelete, failDelete, err := r.adapter.DeleteEmployees(ctx, employer, toCudEmployees.ToDelete)
 	if err != nil {
-		return false, false, fmt.Errorf("syncDelete failed, err: %s", err.Error())
+		return false, false, CUDEmployeeResults{}, fmt.Errorf("syncDelete failed, err: %s", err.Error())
 	}
 
 	toAddLifecycleFlzEmployees, toDeleteLifecycleFlzEmployees := r.getToAddDeleteLifecycleFlzEmployees(
@@ -208,7 +216,7 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 		if employer.GetAnnotations()[lifecycleFinalizerRecordedAnnoKey] != "" {
 			selectedEmployees, err := r.adapter.GetSelectedEmployeeNames(ctx, employer)
 			if err != nil {
-				return false, false, fmt.Errorf("GetSelectedEmployeeNames failed, err: %s", err.Error())
+				return false, false, CUDEmployeeResults{}, fmt.Errorf("GetSelectedEmployeeNames failed, err: %s", err.Error())
 			}
 			recordedEmployees := strings.Split(employer.GetAnnotations()[lifecycleFinalizerRecordedAnnoKey], ",")
 			selectedSet := sets.NewString(selectedEmployees...)
@@ -224,7 +232,7 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 	lifecycleFlz := utils.GenerateLifecycleFinalizer(employer.GetName())
 	err = r.ensureLifecycleFinalizer(ctx, ns, lifecycleFlz, toAddLifecycleFlzEmployees, toDeleteLifecycleFlzEmployees)
 	if err != nil {
-		return false, false, fmt.Errorf("ensureLifecycleFinalizer failed, err: %s", err.Error())
+		return false, false, CUDEmployeeResults{}, fmt.Errorf("ensureLifecycleFinalizer failed, err: %s", err.Error())
 	}
 
 	if needRecordEmployees {
@@ -259,14 +267,22 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 				err = r.Client.Patch(ctx, employer, patch)
 			}
 			if err != nil {
-				return false, false, fmt.Errorf("patch lifecycleFinalizerRecordedAnno failed, err: %s", err.Error())
+				return false, false, CUDEmployeeResults{}, fmt.Errorf("patch lifecycleFinalizerRecordedAnno failed, err: %s", err.Error())
 			}
 		}
 	}
 
 	isClean := len(toCudEmployees.ToCreate) == 0 && len(toCudEmployees.ToUpdate) == 0 && len(toCudEmployees.Unchanged) == 0 && len(failDelete) == 0
 	cudFailedExist := len(failCreate) > 0 || len(failUpdate) > 0 || len(failDelete) > 0
-	return isClean, cudFailedExist, nil
+	return isClean, cudFailedExist, CUDEmployeeResults{
+		SuccCreated: succCreate,
+		FailCreated: failCreate,
+		SuccUpdated: succUpdate,
+		FailUpdated: failUpdate,
+		SuccDeleted: succDelete,
+		FailDeleted: failDelete,
+		Unchanged:   toCudEmployees.Unchanged,
+	}, nil
 }
 
 // ensureExpectFinalizer add expected finalizer to employee's available condition anno

@@ -66,6 +66,12 @@ type ExpectedFinalizerRecordOptions interface {
 	NeedRecordExpectedFinalizerCondition() bool
 }
 
+// StatusRecordOptions defines methods of record something for adapters
+type StatusRecordOptions interface {
+	RecordStatuses(ctx context.Context, employer client.Object,
+		cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults) error
+}
+
 // ReconcileLifecycleOptions defines whether PodOpsLifecycle followed
 // and whether employees' LifecycleFinalizer conditions need to be Recorded/Erased to employer's anno.
 // If not implemented, the default options would be:
@@ -134,11 +140,31 @@ type ToCUDEmployer struct {
 	Unchanged []IEmployer
 }
 
+type CUDEmployerResults struct {
+	SuccCreated []IEmployer
+	FailCreated []IEmployer
+	SuccUpdated []IEmployer
+	FailUpdated []IEmployer
+	SuccDeleted []IEmployer
+	FailDeleted []IEmployer
+	Unchanged   []IEmployer
+}
+
 type ToCUDEmployees struct {
 	ToCreate  []IEmployee
 	ToUpdate  []IEmployee
 	ToDelete  []IEmployee
 	Unchanged []IEmployee
+}
+
+type CUDEmployeeResults struct {
+	SuccCreated []IEmployee
+	FailCreated []IEmployee
+	SuccUpdated []IEmployee
+	FailUpdated []IEmployee
+	SuccDeleted []IEmployee
+	FailDeleted []IEmployee
+	Unchanged   []IEmployee
 }
 
 type PodEmployeeStatuses struct {
