@@ -199,7 +199,7 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 			"get current employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
-	isCleanEmployer, syncEmployerFailedExist, err := r.syncEmployer(ctx, employer, expectedEmployer, currentEmployer)
+	isCleanEmployer, syncEmployerFailedExist, cudEmployerResults, err := r.syncEmployer(ctx, employer, expectedEmployer, currentEmployer)
 	if err != nil {
 		r.logger.Error(err, fmt.Sprintf("sync employer for %s: %s/%s failed",
 			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
@@ -224,7 +224,7 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 			"get current employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
-	isCleanEmployee, syncEmployeeFailedExist, err := r.syncEmployees(ctx, employer, expectEmployees, currentEmployees)
+	isCleanEmployee, syncEmployeeFailedExist, cudEmployeeResults, err := r.syncEmployees(ctx, employer, expectEmployees, currentEmployees)
 	if err != nil {
 		r.logger.Error(err, fmt.Sprintf("sync employees for %s: %s/%s failed",
 			employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
@@ -251,6 +251,17 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 			return reconcile.Result{RequeueAfter: requeueOptions.EmployeeSyncRequeueInterval()}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("employer or employees synced failed exist")
+	}
+
+	if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {
+		err = recordOptions.RecordStatuses(ctx, employer, cudEmployerResults, cudEmployeeResults)
+		if err != nil {
+			r.logger.Error(err, fmt.Sprintf("record status for %s: %s/%s failed",
+				employer.GetObjectKind().GroupVersionKind().Kind, employer.GetNamespace(), employer.GetName()))
+			r.recorder.Eventf(employer, corev1.EventTypeWarning, "recordStatusesFailed",
+				"record status for employer failed: %s", err.Error())
+			return reconcile.Result{}, err
+		}
 	}
 
 	r.recorder.Eventf(employer, corev1.EventTypeNormal, "ReconcileSucceed", "")
