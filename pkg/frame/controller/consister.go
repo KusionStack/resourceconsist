@@ -459,11 +459,12 @@ func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer cli
 					Namespace: employer.GetNamespace(),
 					Name:      employeeName,
 				}, &pod)
+			} else {
+				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
+					Namespace: employer.GetNamespace(),
+					Name:      employeeName,
+				}, &pod)
 			}
-			err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-				Namespace: employer.GetNamespace(),
-				Name:      employeeName,
-			}, &pod)
 		} else {
 			err = r.Client.Get(ctx, types.NamespacedName{
 				Namespace: employer.GetNamespace(),
@@ -572,11 +573,12 @@ func (r *Consist) patchDeletePodExpectedFinalizer(ctx context.Context, employer 
 					Namespace: employer.GetNamespace(),
 					Name:      employeeName,
 				}, &pod)
+			} else {
+				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
+					Namespace: employer.GetNamespace(),
+					Name:      employeeName,
+				}, &pod)
 			}
-			err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-				Namespace: employer.GetNamespace(),
-				Name:      employeeName,
-			}, &pod)
 		} else {
 			err = r.Client.Get(ctx, types.NamespacedName{
 				Namespace: employer.GetNamespace(),
@@ -705,11 +707,12 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 					Namespace: ns,
 					Name:      employeeName,
 				}, employee)
+			} else {
+				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
+					Namespace: ns,
+					Name:      employeeName,
+				}, employee)
 			}
-			err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-				Namespace: ns,
-				Name:      employeeName,
-			}, employee)
 		} else {
 			err = r.Client.Get(ctx, types.NamespacedName{
 				Namespace: ns,
