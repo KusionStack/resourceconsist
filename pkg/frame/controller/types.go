@@ -48,6 +48,16 @@ type ReconcileWatchOptions interface {
 	EmployeePredicates() predicate.Funcs
 }
 
+// MultiClusterOptions defines whether employee is under fed cluster
+// "kusionstack.io/kube-utils/multicluster" is the solution for multi cluster
+// if MultiClusterOptions implemented, the cache and client of manager should be generated via  "kusionstack.io/kube-utils/multicluster"
+type MultiClusterOptions interface {
+	// Employer should be under fed, otherwise, just forget multi cluster :)
+	// EmployerFed() bool
+
+	EmployeeFed() bool
+}
+
 type ExpectedFinalizerRecordOptions interface {
 	// NeedRecordExpectedFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,
 	// in the case of employment relationship might change(like label/selector changes) and the compensation logic
@@ -77,6 +87,9 @@ type ReconcileRequeueOptions interface {
 type ReconcileAdapter interface {
 	GetControllerName() string
 
+	// GetSelectedEmployeeNames returns employees' names selected by employer
+	// note: in multi cluster case, if adapters deployed in fed and employees are under local, the format of employeeName
+	// should be "employeeName" + "#" + "clusterName"
 	GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error)
 
 	// GetExpectedEmployer and GetCurrentEmployer return expect/current status of employer from related backend provider
@@ -106,6 +119,9 @@ type IEmployer interface {
 
 type IEmployee interface {
 	GetEmployeeId() string
+	// GetEmployeeName returns employee's name
+	// note: in multi cluster case, if adapters deployed in fed and employees are under local, the format of employeeName
+	// should be "employeeName" + "#" + "clusterName"
 	GetEmployeeName() string
 	GetEmployeeStatuses() interface{}
 	EmployeeEqual(employee IEmployee) (bool, error)

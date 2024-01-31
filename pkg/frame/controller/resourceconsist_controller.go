@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,10 +29,15 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"kusionstack.io/kube-utils/multicluster"
+	"kusionstack.io/kube-utils/multicluster/clusterinfo"
 )
 
 // AddToMgr creates a new Controller of specified reconcileAdapter and adds it to the Manager with default RBAC.
@@ -54,49 +60,51 @@ func AddToMgr(mgr manager.Manager, adapter ReconcileAdapter) error {
 		return err
 	}
 
+	return watch(c, mgr, adapter)
+}
+
+func watch(c controller.Controller, mgr manager.Manager, adapter ReconcileAdapter) error {
+	var employer, employee client.Object
+	var employerEventHandler, employeeEventHandler handler.EventHandler
+	var employerPredicateFuncs, employeePredicateFuncs predicate.Funcs
+	var employerSource, employeeSource source.Source
+
 	if watchOptions, ok := adapter.(ReconcileWatchOptions); ok {
-		// Watch for changes to EmployerResources
-		err = c.Watch(&source.Kind{
-			Type: watchOptions.NewEmployer()},
-			watchOptions.EmployerEventHandler(),
-			watchOptions.EmployerPredicates())
-		if err != nil {
-			return err
-		}
-
-		// Watch for changes to EmployeeResources
-		err = c.Watch(&source.Kind{
-			Type: watchOptions.NewEmployee()},
-			watchOptions.EmployeeEventHandler(),
-			watchOptions.EmployeePredicates())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	// Watch for changes to EmployerResources
-	err = c.Watch(&source.Kind{
-		Type: &corev1.Service{}},
-		&EnqueueServiceWithRateLimit{},
-		employerPredicates)
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to EmployeeResources
-	err = c.Watch(&source.Kind{
-		Type: &corev1.Pod{}},
-		&EnqueueServiceByPod{
+		employer = watchOptions.NewEmployer()
+		employee = watchOptions.NewEmployee()
+		employerEventHandler = watchOptions.EmployerEventHandler()
+		employerPredicateFuncs = watchOptions.EmployerPredicates()
+		employeeEventHandler = watchOptions.EmployeeEventHandler()
+		employeePredicateFuncs = watchOptions.EmployeePredicates()
+	} else {
+		employer = &corev1.Service{}
+		employee = &corev1.Pod{}
+		employerEventHandler = &EnqueueServiceWithRateLimit{}
+		employerPredicateFuncs = employerPredicates
+		employeeEventHandler = &EnqueueServiceByPod{
 			c: mgr.GetClient(),
-		},
-		employeePredicates)
+		}
+		employeePredicateFuncs = employeePredicates
+	}
+
+	if multiClusterOptions, ok := adapter.(MultiClusterOptions); ok {
+		employerSource = multicluster.FedKind(&source.Kind{Type: employer})
+
+		employeeSource = multicluster.FedKind(&source.Kind{Type: employee})
+		if !multiClusterOptions.EmployeeFed() {
+			employeeSource = multicluster.ClustersKind(&source.Kind{Type: employee})
+		}
+	} else {
+		employerSource = &source.Kind{Type: employer}
+		employeeSource = &source.Kind{Type: employee}
+	}
+
+	err := c.Watch(employerSource, employerEventHandler, employerPredicateFuncs)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return c.Watch(employeeSource, employeeEventHandler, employeePredicateFuncs)
 }
 
 func NewReconcile(mgr manager.Manager, reconcileAdapter ReconcileAdapter) *Consist {
@@ -120,15 +128,26 @@ type Consist struct {
 
 func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	var employer client.Object
+	var err error
+
 	if watchOptions, ok := r.adapter.(ReconcileWatchOptions); ok {
 		employer = watchOptions.NewEmployer()
 	} else {
 		employer = &corev1.Service{}
 	}
-	err := r.Client.Get(ctx, types.NamespacedName{
-		Namespace: request.Namespace,
-		Name:      request.Name,
-	}, employer)
+
+	if _, ok := r.adapter.(MultiClusterOptions); ok {
+		err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
+			Namespace: request.Namespace,
+			Name:      request.Name,
+		}, employer)
+	} else {
+		err = r.Client.Get(ctx, types.NamespacedName{
+			Namespace: request.Namespace,
+			Name:      request.Name,
+		}, employer)
+	}
+
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil
