@@ -80,7 +80,7 @@ func getPodIpv6Address(pod *corev1.Pod) string {
 // GetCommonPodEmployeeStatus called by ReconcileAdapter's GetExpectedEmployee/GetCurrentEmployee
 func GetCommonPodEmployeeStatus(pod *corev1.Pod) (PodEmployeeStatuses, error) {
 	if pod == nil {
-		return PodEmployeeStatuses{}, errors.New("SetCommonPodEmployeeStatus failed, pod is nil")
+		return PodEmployeeStatuses{}, errors.New("GetCommonPodEmployeeStatus failed, pod is nil")
 	}
 
 	return PodEmployeeStatuses{
