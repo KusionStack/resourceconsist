@@ -49,7 +49,7 @@ type ReconcileWatchOptions interface {
 }
 
 // MultiClusterOptions defines whether employee is under fed cluster
-// "kusionstack.io/kube-utils/multicluster" is the solution for multi cluster
+// "kusionstack.io/kube-utils/multicluster" is the solution we use for multi cluster
 // if MultiClusterOptions implemented, the cache and client of manager should be generated via  "kusionstack.io/kube-utils/multicluster"
 type MultiClusterOptions interface {
 	// Employer should be under fed, otherwise, just forget multi cluster :)
@@ -168,7 +168,6 @@ type CUDEmployeeResults struct {
 }
 
 type PodEmployeeStatuses struct {
-	// can be set by calling SetCommonPodEmployeeStatus
 	Ip             string `json:"ip,omitempty"`
 	Ipv6           string `json:"ipv6,omitempty"`
 	LifecycleReady bool   `json:"lifecycleReady,omitempty"`

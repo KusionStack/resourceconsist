@@ -174,13 +174,13 @@ func (e *EnqueueServiceByPod) Generic(evt event.GenericEvent, q workqueue.RateLi
 	}
 }
 
-func GetEmployerByEmployee(ctx context.Context, client client.Client, employee client.Object) ([]string, error) {
+func GetEmployerByEmployee(ctx context.Context, c client.Client, employee client.Object) ([]string, error) {
 	if employee.GetLabels() == nil {
 		return nil, nil
 	}
 
 	services := &corev1.ServiceList{}
-	if err := client.List(ctx, services); err != nil {
+	if err := c.List(ctx, services, &client.ListOptions{Namespace: employee.GetNamespace()}); err != nil {
 		return nil, err
 	}
 

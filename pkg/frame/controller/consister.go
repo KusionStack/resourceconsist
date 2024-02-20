@@ -463,9 +463,12 @@ func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer cli
 		var localCluster string
 		employeeName := podExpectedFinalizerOps.Name
 		if multiClusterOptionsImplemented && employeeUnderLocal {
-			// todo check avoid panic
-			employeeName = strings.Split(employeeName, "#")[0]
-			localCluster = strings.Split(employeeName, "#")[1]
+			employeeNameSplits := strings.Split(employeeName, "#")
+			if len(employeeNameSplits) != 2 {
+				return fmt.Errorf("local employee's name invalid")
+			}
+			employeeName = employeeNameSplits[0]
+			localCluster = employeeNameSplits[1]
 		}
 		var pod corev1.Pod
 		var err error
@@ -575,9 +578,12 @@ func (r *Consist) patchDeletePodExpectedFinalizer(ctx context.Context, employer 
 		var localCluster string
 		employeeName := podExpectedFinalizerOps.Name
 		if multiClusterOptionsImplemented && employeeUnderLocal {
-			// todo check avoid panic
-			employeeName = strings.Split(employeeName, "#")[0]
-			localCluster = strings.Split(employeeName, "#")[1]
+			employeeNameSplits := strings.Split(employeeName, "#")
+			if len(employeeNameSplits) != 2 {
+				return fmt.Errorf("local employee's name invalid")
+			}
+			employeeName = employeeNameSplits[0]
+			localCluster = employeeNameSplits[1]
 		}
 
 		var pod corev1.Pod
@@ -711,9 +717,12 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 		employeeName := toAdd[i]
 		var localCluster string
 		if multiClusterOptionsImplemented && employeeUnderLocal {
-			// todo check avoid panic
-			employeeName = strings.Split(employeeName, "#")[0]
-			localCluster = strings.Split(employeeName, "#")[1]
+			employeeNameSplits := strings.Split(employeeName, "#")
+			if len(employeeNameSplits) != 2 {
+				return fmt.Errorf("local employee's name invalid")
+			}
+			employeeName = employeeNameSplits[0]
+			localCluster = employeeNameSplits[1]
 		}
 		var employee = &corev1.Pod{}
 		var err error
@@ -772,9 +781,12 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 		employeeName := toDelete[i]
 		var localCluster string
 		if multiClusterOptionsImplemented && employeeUnderLocal {
-			// todo check avoid panic
-			employeeName = strings.Split(employeeName, "#")[0]
-			localCluster = strings.Split(employeeName, "#")[1]
+			employeeNameSplits := strings.Split(employeeName, "#")
+			if len(employeeNameSplits) != 2 {
+				return fmt.Errorf("local employee's name invalid")
+			}
+			employeeName = employeeNameSplits[0]
+			localCluster = employeeNameSplits[1]
 		}
 		var employee = &corev1.Pod{}
 		if multiClusterOptionsImplemented {
