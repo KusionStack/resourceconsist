@@ -4,7 +4,7 @@ customized controller can be realized easily, and offering the ability of follow
 [**PodOpsLifecycle**](https://kusionstack.io/docs/operating/concepts/podopslifecycle) for controllers.
 
 The only thing users need to do to realize a customized controller is writing an adapter implementing 
-[ReconcileAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/controller/types.go#L67). 
+[ReconcileAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/controller/types.go#L93). 
 For controllers following **PodOpsLifecycle**, 
 [WebhookAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/webhook/types.go#L26) is 
 also necessary to be implemented.
