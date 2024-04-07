@@ -22,3 +22,14 @@ const (
 	lifecycleFinalizerRecordedAnnoKey = "resource-consist.kusionstack.io/employees-lifecycle-finalizer-recorded"
 	cleanFinalizerPrefix              = "resource-consist.kusionstack.io/clean-"
 )
+
+// Event reason list
+const (
+	EnsureEmployerCleanFinalizerFailed  = "EnsureEmployerCleanFinalizerFailed"
+	EnsureEmployerCleanFinalizerSucceed = "EnsureEmployerCleanFinalizerSucceed"
+	EnsureExpectedFinalizerFailed       = "EnsureExpectedFinalizerFailed"
+	SyncEmployerFailed                  = "SyncEmployerFailed"
+	SyncEmployeesFailed                 = "SyncEmployeesFailed"
+	CleanEmployerCleanFinalizerFailed   = "CleanEmployerCleanFinalizerFailed"
+	CleanEmployerCleanFinalizerSucceed  = "CleanEmployerCleanFinalizerSucceed"
+)
