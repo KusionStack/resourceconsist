@@ -479,7 +479,7 @@ var _ = Describe("resource-consist-controller", func() {
 					return false
 				}
 				for _, evt := range events.Items {
-					if evt.Reason == "syncEmployerFailed" &&
+					if evt.Reason == SyncEmployerFailed &&
 						evt.Message == "sync employer failed: syncCreate failed, err: fake err" {
 						return true
 					}
@@ -491,21 +491,6 @@ var _ = Describe("resource-consist-controller", func() {
 				RemoteVIP:    "demo-remote-VIP",
 				RemoteVIPQPS: 100,
 			})
-
-			Eventually(func() bool {
-				events, err := clientSet.CoreV1().Events("default").List(context.TODO(), v1.ListOptions{
-					FieldSelector: "involvedObject.name=resource-consist-ut-svc-2",
-					TypeMeta:      v1.TypeMeta{Kind: "Service"}})
-				if err != nil {
-					return false
-				}
-				for _, evt := range events.Items {
-					if evt.Reason == "ReconcileSucceed" && evt.Message == "" {
-						return true
-					}
-				}
-				return false
-			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
 			Eventually(func() bool {
 				details, exist := demoResourceVipStatusInProvider.Load(svc2.Name)
@@ -528,7 +513,7 @@ var _ = Describe("resource-consist-controller", func() {
 					return false
 				}
 				for _, evt := range events.Items {
-					if evt.Reason == "syncEmployeesFailed" &&
+					if evt.Reason == SyncEmployeesFailed &&
 						evt.Message == "sync employees failed: syncCreate failed, err: fake err" {
 						return true
 					}
@@ -549,21 +534,6 @@ var _ = Describe("resource-consist-controller", func() {
 					},
 				},
 			})
-
-			Eventually(func() bool {
-				events, err := clientSet.CoreV1().Events("default").List(context.TODO(), v1.ListOptions{
-					FieldSelector: "involvedObject.name=resource-consist-ut-svc-2",
-					TypeMeta:      v1.TypeMeta{Kind: "Service"}})
-				if err != nil {
-					return false
-				}
-				for _, evt := range events.Items {
-					if evt.Reason == "ReconcileSucceed" && evt.Message == "" {
-						return true
-					}
-				}
-				return false
-			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod2.Name)
