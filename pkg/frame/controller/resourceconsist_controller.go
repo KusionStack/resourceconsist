@@ -84,15 +84,15 @@ func watch(c controller.Controller, mgr manager.Manager, adapter ReconcileAdapte
 		employeePredicateFuncs = employeePredicates
 	}
 
-	employerSource = source.Kind(mgr.GetCache(), employer)
-	employeeSource = source.Kind(mgr.GetCache(), employee)
+	employerSource = source.Kind(mgr.GetCache(), employer, employerEventHandler, employerPredicateFuncs)
+	employeeSource = source.Kind(mgr.GetCache(), employee, employeeEventHandler, employeePredicateFuncs)
 
-	err := c.Watch(employerSource, employerEventHandler, employerPredicateFuncs)
+	err := c.Watch(employerSource)
 	if err != nil {
 		return err
 	}
 
-	return c.Watch(employeeSource, employeeEventHandler, employeePredicateFuncs)
+	return c.Watch(employeeSource)
 }
 
 func NewReconcile(mgr manager.Manager, reconcileAdapter ReconcileAdapter) *Consist {

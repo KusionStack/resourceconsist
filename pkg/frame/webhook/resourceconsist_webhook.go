@@ -85,10 +85,10 @@ func (r *PodResourceConsistWebhook) Handle(ctx context.Context, req admission.Re
 type PodResourceConsistWebhook struct {
 	WebhookAdapter
 	client.Client
-	*admission.Decoder
+	admission.Decoder
 }
 
-func NewPodResourceConsistWebhook(cli client.Client, decoder *admission.Decoder, adapter WebhookAdapter) *PodResourceConsistWebhook {
+func NewPodResourceConsistWebhook(cli client.Client, decoder admission.Decoder, adapter WebhookAdapter) *PodResourceConsistWebhook {
 	return &PodResourceConsistWebhook{
 		adapter,
 		cli,
