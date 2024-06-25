@@ -47,7 +47,7 @@ func AddToMgr(mgr manager.Manager, adapter WebhookAdapter) error {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	decoder, _ := admission.NewDecoder(mgr.GetScheme())
+	decoder := admission.NewDecoder(mgr.GetScheme())
 	server.Register(path, &webhook.Admission{Handler: NewPodResourceConsistWebhook(mgr.GetClient(), decoder, adapter)})
 	logger.Info("Registered webhook handler", "path", path)
 

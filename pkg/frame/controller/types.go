@@ -51,12 +51,15 @@ type ReconcileWatchOptions interface {
 // MultiClusterOptions defines whether employee is under fed cluster
 // "kusionstack.io/kube-utils/multicluster" is the solution we use for multi cluster
 // if MultiClusterOptions implemented, the cache and client of manager should be generated via  "kusionstack.io/kube-utils/multicluster"
-type MultiClusterOptions interface {
-	// Employer should be under fed, otherwise, just forget multi cluster :)
-	// EmployerFed() bool
 
-	EmployeeFed() bool
-}
+// For Controller-Runtime v.0.15 "kusionstack.io/kube-utils/multicluster" is not compatible, disable it temporarily
+
+//type MultiClusterOptions interface {
+//	// Employer should be under fed, otherwise, just forget multi cluster :)
+//	// EmployerFed() bool
+//
+//	EmployeeFed() bool
+//}
 
 type ExpectedFinalizerRecordOptions interface {
 	// NeedRecordExpectedFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,

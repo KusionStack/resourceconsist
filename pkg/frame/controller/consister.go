@@ -32,7 +32,6 @@ import (
 	"kusionstack.io/kube-api/apps/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"kusionstack.io/kube-utils/multicluster/clusterinfo"
 	"kusionstack.io/resourceconsist/pkg/utils"
 )
 
@@ -261,11 +260,8 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 			}
 			annos[lifecycleFinalizerRecordedAnnoKey] = strings.Join(toAddLifecycleFlzEmployees, ",")
 			employer.SetAnnotations(annos)
-			if _, ok := r.adapter.(MultiClusterOptions); ok {
-				err = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employer, patch)
-			} else {
-				err = r.Client.Patch(ctx, employer, patch)
-			}
+
+			err = r.Client.Patch(ctx, employer, patch)
 			if err != nil {
 				return false, false, CUDEmployeeResults{}, fmt.Errorf("patch lifecycleFinalizerRecordedAnno failed, err: %s", err.Error())
 			}
@@ -373,11 +369,8 @@ func (r *Consist) ensureExpectedFinalizerNeedRecord(ctx context.Context, employe
 		}
 		annos[expectedFinalizerAddedAnnoKey] = strings.Join(notDeletedPodNames, ",")
 		employer.SetAnnotations(annos)
-		if _, ok := r.adapter.(MultiClusterOptions); ok {
-			err = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employer, patch)
-		} else {
-			err = r.Client.Patch(ctx, employer, patch)
-		}
+
+		err = r.Client.Patch(ctx, employer, patch)
 		return len(notDeletedPodNames) == 0, err
 	}
 
@@ -432,11 +425,7 @@ func (r *Consist) ensureExpectedFinalizerNeedRecord(ctx context.Context, employe
 	annos[expectedFinalizerAddedAnnoKey] = strings.Join(addedNames, ",")
 	employer.SetAnnotations(annos)
 
-	if _, ok := r.adapter.(MultiClusterOptions); ok {
-		err = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employer, patch)
-	} else {
-		err = r.Client.Patch(ctx, employer, patch)
-	}
+	err = r.Client.Patch(ctx, employer, patch)
 	return len(addedNames) == 0, errors2.NewAggregate([]error{errPatchEmployees, err})
 }
 
@@ -452,44 +441,16 @@ func (r *Consist) patchPodExpectedFinalizer(ctx context.Context, employer client
 
 func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer client.Object, toAdd []PodExpectedFinalizerOps,
 	expectedFlzKey, expectedFlz string) error {
-	var employeeUnderLocal bool
-	multiClusterOptions, multiClusterOptionsImplemented := r.adapter.(MultiClusterOptions)
-	if multiClusterOptionsImplemented {
-		employeeUnderLocal = !multiClusterOptions.EmployeeFed()
-	}
 
 	_, err := utils.SlowStartBatch(len(toAdd), 1, false, func(i int, _ error) error {
 		podExpectedFinalizerOps := &toAdd[i]
-		var localCluster string
 		employeeName := podExpectedFinalizerOps.Name
-		if multiClusterOptionsImplemented && employeeUnderLocal {
-			employeeNameSplits := strings.Split(employeeName, "#")
-			if len(employeeNameSplits) != 2 {
-				return fmt.Errorf("local employee's name invalid")
-			}
-			employeeName = employeeNameSplits[0]
-			localCluster = employeeNameSplits[1]
-		}
+
 		var pod corev1.Pod
-		var err error
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, localCluster), types.NamespacedName{
-					Namespace: employer.GetNamespace(),
-					Name:      employeeName,
-				}, &pod)
-			} else {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-					Namespace: employer.GetNamespace(),
-					Name:      employeeName,
-				}, &pod)
-			}
-		} else {
-			err = r.Client.Get(ctx, types.NamespacedName{
-				Namespace: employer.GetNamespace(),
-				Name:      employeeName,
-			}, &pod)
-		}
+		err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: employer.GetNamespace(),
+			Name:      employeeName,
+		}, &pod)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -514,16 +475,7 @@ func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer cli
 				return errMarshal
 			}
 			pod.Annotations[v1alpha1.PodAvailableConditionsAnnotation] = string(annoAvailableExpectedFlzs)
-			var errPatch error
-			if multiClusterOptionsImplemented {
-				if employeeUnderLocal {
-					errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, localCluster), &pod, patch)
-				} else {
-					errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), &pod, patch)
-				}
-			} else {
-				errPatch = r.Client.Patch(ctx, &pod, patch)
-			}
+			errPatch := r.Client.Patch(ctx, &pod, patch)
 			if errPatch != nil {
 				return errPatch
 			}
@@ -542,16 +494,7 @@ func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer cli
 					return errMarshal
 				}
 				pod.Annotations[v1alpha1.PodAvailableConditionsAnnotation] = string(annoAvailableExpectedFlzs)
-				var errPatch error
-				if multiClusterOptionsImplemented {
-					if employeeUnderLocal {
-						errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, localCluster), &pod, patch)
-					} else {
-						errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), &pod, patch)
-					}
-				} else {
-					errPatch = r.Client.Patch(ctx, &pod, patch)
-				}
+				errPatch := r.Client.Patch(ctx, &pod, patch)
 				if errPatch != nil {
 					return errPatch
 				}
@@ -566,48 +509,15 @@ func (r *Consist) patchAddPodExpectedFinalizer(ctx context.Context, employer cli
 
 func (r *Consist) patchDeletePodExpectedFinalizer(ctx context.Context, employer client.Object, toDelete []PodExpectedFinalizerOps,
 	expectedFlzKey string) error {
-	var employeeUnderLocal bool
-	multiClusterOptions, multiClusterOptionsImplemented := r.adapter.(MultiClusterOptions)
-	if multiClusterOptionsImplemented {
-		employeeUnderLocal = !multiClusterOptions.EmployeeFed()
-	}
-
 	_, err := utils.SlowStartBatch(len(toDelete), 1, false, func(i int, _ error) error {
 		podExpectedFinalizerOps := &toDelete[i]
-
-		var localCluster string
 		employeeName := podExpectedFinalizerOps.Name
-		if multiClusterOptionsImplemented && employeeUnderLocal {
-			employeeNameSplits := strings.Split(employeeName, "#")
-			if len(employeeNameSplits) != 2 {
-				return fmt.Errorf("local employee's name invalid")
-			}
-			employeeName = employeeNameSplits[0]
-			localCluster = employeeNameSplits[1]
-		}
 
 		var pod corev1.Pod
-
-		var err error
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, localCluster), types.NamespacedName{
-					Namespace: employer.GetNamespace(),
-					Name:      employeeName,
-				}, &pod)
-			} else {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-					Namespace: employer.GetNamespace(),
-					Name:      employeeName,
-				}, &pod)
-			}
-		} else {
-			err = r.Client.Get(ctx, types.NamespacedName{
-				Namespace: employer.GetNamespace(),
-				Name:      employeeName,
-			}, &pod)
-		}
-
+		err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: employer.GetNamespace(),
+			Name:      employeeName,
+		}, &pod)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				podExpectedFinalizerOps.Succeed = true
@@ -635,16 +545,8 @@ func (r *Consist) patchDeletePodExpectedFinalizer(ctx context.Context, employer 
 				return errMarshal
 			}
 			pod.Annotations[v1alpha1.PodAvailableConditionsAnnotation] = string(annoAvailableExpectedFlzs)
-			var errPatch error
-			if multiClusterOptionsImplemented {
-				if employeeUnderLocal {
-					errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, localCluster), &pod, patch)
-				} else {
-					errPatch = r.Client.Patch(clusterinfo.WithCluster(ctx, clusterinfo.Fed), &pod, patch)
-				}
-			} else {
-				errPatch = r.Client.Patch(ctx, &pod, patch)
-			}
+
+			errPatch := r.Client.Patch(ctx, &pod, patch)
 			if errPatch != nil {
 				return errPatch
 			}
@@ -664,19 +566,10 @@ func (r *Consist) cleanEmployerCleanFinalizer(ctx context.Context, employer clie
 		employerLatest = &corev1.Service{}
 	}
 
-	var err error
-	if _, ok := r.adapter.(MultiClusterOptions); ok {
-		err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-			Namespace: employer.GetNamespace(),
-			Name:      employer.GetName(),
-		}, employerLatest)
-	} else {
-		err = r.Client.Get(ctx, types.NamespacedName{
-			Namespace: employer.GetNamespace(),
-			Name:      employer.GetName(),
-		}, employerLatest)
-	}
-
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Namespace: employer.GetNamespace(),
+		Name:      employer.GetName(),
+	}, employerLatest)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -698,53 +591,19 @@ func (r *Consist) cleanEmployerCleanFinalizer(ctx context.Context, employer clie
 		return nil
 	}
 	employerLatest.SetFinalizers(finalizers)
-	if _, ok := r.adapter.(MultiClusterOptions); ok {
-		return r.Client.Update(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employerLatest)
-	}
 	return r.Client.Update(ctx, employerLatest)
 }
 
 // ensureLifecycleFinalizer add/delete lifecycle finalizer to pods
 // if employee is not pod, or the adapter not follows PodOpsLifecycle, len of toAdd & toDelete would be 0
 func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz string, toAdd, toDelete []string) error {
-	var employeeUnderLocal bool
-	multiClusterOptions, multiClusterOptionsImplemented := r.adapter.(MultiClusterOptions)
-	if multiClusterOptionsImplemented {
-		employeeUnderLocal = !multiClusterOptions.EmployeeFed()
-	}
-
 	_, err := utils.SlowStartBatch(len(toAdd), 1, false, func(i int, _ error) error {
 		employeeName := toAdd[i]
-		var localCluster string
-		if multiClusterOptionsImplemented && employeeUnderLocal {
-			employeeNameSplits := strings.Split(employeeName, "#")
-			if len(employeeNameSplits) != 2 {
-				return fmt.Errorf("local employee's name invalid")
-			}
-			employeeName = employeeNameSplits[0]
-			localCluster = employeeNameSplits[1]
-		}
 		var employee = &corev1.Pod{}
-		var err error
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, localCluster), types.NamespacedName{
-					Namespace: ns,
-					Name:      employeeName,
-				}, employee)
-			} else {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-					Namespace: ns,
-					Name:      employeeName,
-				}, employee)
-			}
-		} else {
-			err = r.Client.Get(ctx, types.NamespacedName{
-				Namespace: ns,
-				Name:      employeeName,
-			}, employee)
-		}
-
+		err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: ns,
+			Name:      employeeName,
+		}, employee)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -762,16 +621,7 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 			return nil
 		}
 		employee.SetFinalizers(append(employee.GetFinalizers(), lifecycleFlz))
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Update(clusterinfo.WithCluster(ctx, localCluster), employee)
-			} else {
-				err = r.Client.Update(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employee)
-			}
-		} else {
-			err = r.Client.Update(ctx, employee)
-		}
-		return err
+		return r.Client.Update(ctx, employee)
 	})
 	if err != nil {
 		return err
@@ -779,33 +629,12 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 
 	_, err = utils.SlowStartBatch(len(toDelete), 1, false, func(i int, _ error) error {
 		employeeName := toDelete[i]
-		var localCluster string
-		if multiClusterOptionsImplemented && employeeUnderLocal {
-			employeeNameSplits := strings.Split(employeeName, "#")
-			if len(employeeNameSplits) != 2 {
-				return fmt.Errorf("local employee's name invalid")
-			}
-			employeeName = employeeNameSplits[0]
-			localCluster = employeeNameSplits[1]
-		}
 		var employee = &corev1.Pod{}
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Get(clusterinfo.WithCluster(ctx, localCluster), types.NamespacedName{
-					Namespace: ns,
-					Name:      employeeName,
-				}, employee)
-			}
-			err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-				Namespace: ns,
-				Name:      employeeName,
-			}, employee)
-		} else {
-			err = r.Client.Get(ctx, types.NamespacedName{
-				Namespace: ns,
-				Name:      employeeName,
-			}, employee)
-		}
+		err = r.Client.Get(ctx, types.NamespacedName{
+			Namespace: ns,
+			Name:      employeeName,
+		}, employee)
+
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -825,16 +654,7 @@ func (r *Consist) ensureLifecycleFinalizer(ctx context.Context, ns, lifecycleFlz
 			return nil
 		}
 		employee.SetFinalizers(finalizers)
-		if multiClusterOptionsImplemented {
-			if employeeUnderLocal {
-				err = r.Client.Update(clusterinfo.WithCluster(ctx, localCluster), employee)
-			} else {
-				err = r.Client.Update(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employee)
-			}
-		} else {
-			err = r.Client.Update(ctx, employee)
-		}
-		return err
+		return r.Client.Update(ctx, employee)
 	})
 	return err
 }
@@ -902,8 +722,5 @@ func (r *Consist) ensureEmployerCleanFlz(ctx context.Context, employer client.Ob
 		}
 	}
 	employer.SetFinalizers(append(employer.GetFinalizers(), cleanFinalizerPrefix+employer.GetName()))
-	if _, ok := r.adapter.(MultiClusterOptions); ok {
-		return true, r.Client.Update(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employer)
-	}
 	return true, r.Client.Update(ctx, employer)
 }

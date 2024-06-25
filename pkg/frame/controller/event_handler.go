@@ -42,7 +42,7 @@ type EnqueueServiceByPod struct {
 	c client.Client
 }
 
-func (e *EnqueueServiceWithRateLimit) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (e *EnqueueServiceWithRateLimit) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	if evt.Object == nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (e *EnqueueServiceWithRateLimit) Create(evt event.CreateEvent, q workqueue.
 	}})
 }
 
-func (e *EnqueueServiceWithRateLimit) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (e *EnqueueServiceWithRateLimit) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	if evt.ObjectOld != nil {
 		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 			Name:      evt.ObjectOld.GetName(),
@@ -69,7 +69,7 @@ func (e *EnqueueServiceWithRateLimit) Update(evt event.UpdateEvent, q workqueue.
 	}
 }
 
-func (e *EnqueueServiceWithRateLimit) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (e *EnqueueServiceWithRateLimit) Delete(ctx context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	if evt.Object == nil {
 		return
 	}
@@ -80,7 +80,7 @@ func (e *EnqueueServiceWithRateLimit) Delete(evt event.DeleteEvent, q workqueue.
 	}})
 }
 
-func (e *EnqueueServiceWithRateLimit) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
+func (e *EnqueueServiceWithRateLimit) Generic(ctx context.Context, evt event.GenericEvent, q workqueue.RateLimitingInterface) {
 	if evt.Object == nil {
 		return
 	}
@@ -91,14 +91,14 @@ func (e *EnqueueServiceWithRateLimit) Generic(evt event.GenericEvent, q workqueu
 	}})
 }
 
-func (e *EnqueueServiceByPod) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	serviceNames, err := GetEmployerByEmployee(context.Background(), e.c, evt.Object)
+func (e *EnqueueServiceByPod) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+	serviceNames, err := GetEmployerByEmployee(ctx, e.c, evt.Object)
 	if err != nil {
 		return
 	}
 	for _, obj := range serviceNames {
 		svc := &corev1.Service{}
-		err = e.c.Get(context.Background(), types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
+		err = e.c.Get(ctx, types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
 		if err != nil {
 			continue
 		}
@@ -108,14 +108,14 @@ func (e *EnqueueServiceByPod) Create(evt event.CreateEvent, q workqueue.RateLimi
 	}
 }
 
-func (e *EnqueueServiceByPod) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	serviceNamesOld, err := GetEmployerByEmployee(context.Background(), e.c, evt.ObjectOld)
+func (e *EnqueueServiceByPod) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	serviceNamesOld, err := GetEmployerByEmployee(ctx, e.c, evt.ObjectOld)
 	if err != nil {
 		return
 	}
 	for _, obj := range serviceNamesOld {
 		svc := &corev1.Service{}
-		err = e.c.Get(context.Background(), types.NamespacedName{Name: obj, Namespace: evt.ObjectOld.GetNamespace()}, svc)
+		err = e.c.Get(ctx, types.NamespacedName{Name: obj, Namespace: evt.ObjectOld.GetNamespace()}, svc)
 		if err != nil {
 			continue
 		}
@@ -124,13 +124,13 @@ func (e *EnqueueServiceByPod) Update(evt event.UpdateEvent, q workqueue.RateLimi
 		}
 	}
 
-	serviceNamesNew, err := GetEmployerByEmployee(context.Background(), e.c, evt.ObjectNew)
+	serviceNamesNew, err := GetEmployerByEmployee(ctx, e.c, evt.ObjectNew)
 	if err != nil {
 		return
 	}
 	for _, obj := range serviceNamesNew {
 		svc := &corev1.Service{}
-		err = e.c.Get(context.Background(), types.NamespacedName{Name: obj, Namespace: evt.ObjectNew.GetNamespace()}, svc)
+		err = e.c.Get(ctx, types.NamespacedName{Name: obj, Namespace: evt.ObjectNew.GetNamespace()}, svc)
 		if err != nil {
 			continue
 		}
@@ -140,14 +140,14 @@ func (e *EnqueueServiceByPod) Update(evt event.UpdateEvent, q workqueue.RateLimi
 	}
 }
 
-func (e *EnqueueServiceByPod) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	serviceNames, err := GetEmployerByEmployee(context.Background(), e.c, evt.Object)
+func (e *EnqueueServiceByPod) Delete(ctx context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
+	serviceNames, err := GetEmployerByEmployee(ctx, e.c, evt.Object)
 	if err != nil {
 		return
 	}
 	for _, obj := range serviceNames {
 		svc := &corev1.Service{}
-		err = e.c.Get(context.Background(), types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
+		err = e.c.Get(ctx, types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
 		if err != nil {
 			continue
 		}
@@ -157,14 +157,14 @@ func (e *EnqueueServiceByPod) Delete(evt event.DeleteEvent, q workqueue.RateLimi
 	}
 }
 
-func (e *EnqueueServiceByPod) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-	serviceNames, err := GetEmployerByEmployee(context.Background(), e.c, evt.Object)
+func (e *EnqueueServiceByPod) Generic(ctx context.Context, evt event.GenericEvent, q workqueue.RateLimitingInterface) {
+	serviceNames, err := GetEmployerByEmployee(ctx, e.c, evt.Object)
 	if err != nil {
 		return
 	}
 	for _, obj := range serviceNames {
 		svc := &corev1.Service{}
-		err = e.c.Get(context.Background(), types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
+		err = e.c.Get(ctx, types.NamespacedName{Name: obj, Namespace: evt.Object.GetNamespace()}, svc)
 		if err != nil {
 			continue
 		}

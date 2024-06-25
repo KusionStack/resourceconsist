@@ -35,9 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"kusionstack.io/kube-utils/multicluster"
-	"kusionstack.io/kube-utils/multicluster/clusterinfo"
 )
 
 // AddToMgr creates a new Controller of specified reconcileAdapter and adds it to the Manager with default RBAC.
@@ -87,17 +84,8 @@ func watch(c controller.Controller, mgr manager.Manager, adapter ReconcileAdapte
 		employeePredicateFuncs = employeePredicates
 	}
 
-	if multiClusterOptions, ok := adapter.(MultiClusterOptions); ok {
-		employerSource = multicluster.FedKind(&source.Kind{Type: employer})
-
-		employeeSource = multicluster.FedKind(&source.Kind{Type: employee})
-		if !multiClusterOptions.EmployeeFed() {
-			employeeSource = multicluster.ClustersKind(&source.Kind{Type: employee})
-		}
-	} else {
-		employerSource = &source.Kind{Type: employer}
-		employeeSource = &source.Kind{Type: employee}
-	}
+	employerSource = source.Kind(mgr.GetCache(), employer)
+	employeeSource = source.Kind(mgr.GetCache(), employee)
 
 	err := c.Watch(employerSource, employerEventHandler, employerPredicateFuncs)
 	if err != nil {
@@ -139,17 +127,10 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 	logger := r.logger.WithValues("resourceconsist", request.String(), "kind", employer.GetObjectKind().GroupVersionKind().Kind)
 	defer logger.Info("reconcile finished")
 
-	if _, ok := r.adapter.(MultiClusterOptions); ok {
-		err = r.Client.Get(clusterinfo.WithCluster(ctx, clusterinfo.Fed), types.NamespacedName{
-			Namespace: request.Namespace,
-			Name:      request.Name,
-		}, employer)
-	} else {
-		err = r.Client.Get(ctx, types.NamespacedName{
-			Namespace: request.Namespace,
-			Name:      request.Name,
-		}, employer)
-	}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Namespace: request.Namespace,
+		Name:      request.Name,
+	}, employer)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
