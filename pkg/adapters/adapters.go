@@ -43,6 +43,30 @@ var builtinWebhookAdapters = map[AdapterName]webhookframe.WebhookAdapter{
 	AdapterAlibabaCloudSlb: alibabacloudslb.NewWebhookAdapter(),
 }
 
+func AddAllBuiltinControllerAdatersToMgr(mgr manager.Manager) error {
+	for adapterName, newAdapterFunc := range builtinControllerAdapterNewFuncs {
+		adapter, err := newAdapterFunc(mgr.GetClient())
+		if err != nil {
+			return fmt.Errorf("get adapter %s failed, err: %s", adapterName, err.Error())
+		}
+		err = controllerframe.AddToMgr(mgr, adapter)
+		if err != nil {
+			return fmt.Errorf("add adapter %s to controller failed, err: %s", adapterName, err.Error())
+		}
+	}
+	return nil
+}
+
+func AddAllBuiltinWebhookAdaptersToMgr(mgr manager.Manager) error {
+	for adapterName, adapter := range builtinWebhookAdapters {
+		err := webhookframe.AddToMgr(mgr, adapter)
+		if err != nil {
+			return fmt.Errorf("add adapter %s to controller failed, err: %s", adapterName, err.Error())
+		}
+	}
+	return nil
+}
+
 // AddBuiltinControllerAdaptersToMgr adds controller adapters of given adapterNames to manager
 func AddBuiltinControllerAdaptersToMgr(mgr manager.Manager, adapterNames []AdapterName) error {
 	for _, adapterName := range adapterNames {
