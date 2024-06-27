@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    control-plane: resourceconsist-manager
+  name: resourceconsist-manager
+  namespace: resourceconsist
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      control-plane: resourceconsist-manager
+  serviceName: resourceconsist-manager
+  template:
+    metadata:
+      labels:
+        control-plane: resourceconsist-manager
+    spec:
+      containers:
+        - args:
+            - --leader-elect=true
+            - --cert-dir=/webhook-certs
+            - --dns-name=resourceconsist-manager.resourceconsist.svc
+            - --health-probe-bind-address=:8081
+            - --metrics-bind-address=127.0.0.1:8080
+            - -v=4
+          command:
+            - /manager
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: kusionstack/resourceconsist:v0.1.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: manager
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+      serviceAccountName: resourceconsist-manager
+      terminationGracePeriodSeconds: 0
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: webhook-certs
+updateStrategy:
+  type: OnDelete
