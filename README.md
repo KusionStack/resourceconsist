@@ -1,4 +1,6 @@
 # ResourceConsist
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FKusionStack%2Fresourceconsist.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FKusionStack%2Fresourceconsist?ref=badge_shield)
+
 [**ResourceConsist**](https://kusionstack.io/docs/operating/manuals/resourceconsist) aims to make a 
 customized controller can be realized easily, and offering the ability of following 
 [**PodOpsLifecycle**](https://kusionstack.io/docs/operating/concepts/podopslifecycle) for controllers.
@@ -55,3 +57,7 @@ experimental adapters are ready to release.
 We welcome everyone to participate in construction with us. Visit the [contribution guide](docs/contribution.md)
 to understand how to participate in the contribution KusionStack project.
 If you have any questions, please [submit the issue](https://github.com/KusionStack/resourceconsist/issues).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FKusionStack%2Fresourceconsist.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FKusionStack%2Fresourceconsist?ref=badge_large)
