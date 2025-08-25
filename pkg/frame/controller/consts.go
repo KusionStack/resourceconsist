@@ -20,7 +20,9 @@ const (
 	defaultMaxConcurrentReconciles    = 5
 	expectedFinalizerAddedAnnoKey     = "resource-consist.kusionstack.io/employees-expected-finalizer-added"
 	lifecycleFinalizerRecordedAnnoKey = "resource-consist.kusionstack.io/employees-lifecycle-finalizer-recorded"
-	cleanFinalizerPrefix              = "resource-consist.kusionstack.io/clean-"
+	// cleanFinalizerPrefix would be deprecated in the future
+	cleanFinalizerPrefix = "resource-consist.kusionstack.io/clean-"
+	cleanFinalizer       = "resource-consist.kusionstack.io/clean-finalizer"
 )
 
 // Event reason list
