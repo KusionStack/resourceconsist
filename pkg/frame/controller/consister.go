@@ -18,8 +18,6 @@ package controller
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -688,9 +686,13 @@ func (r *Consist) cleanEmployerCleanFinalizer(ctx context.Context, employer clie
 
 	alreadyDeleted := true
 	var finalizers []string
-	cleanFlz := generateCleanFlz(employer)
+	oldCleanFlz := generateOldCleanFlz(employer)
 	for _, flz := range employer.GetFinalizers() {
-		if flz == cleanFlz {
+		if flz == oldCleanFlz {
+			alreadyDeleted = false
+			continue
+		}
+		if flz == cleanFinalizer {
 			alreadyDeleted = false
 			continue
 		}
@@ -898,22 +900,23 @@ func (r *Consist) ensureEmployerCleanFlz(ctx context.Context, employer client.Ob
 	if !employer.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
+	var finalizers []string
 	for _, flz := range employer.GetFinalizers() {
-		if flz == generateCleanFlz(employer) {
+		if flz == cleanFinalizer {
 			return false, nil
 		}
+		if flz == generateOldCleanFlz(employer) {
+			continue
+		}
+		finalizers = append(finalizers, flz)
 	}
-	employer.SetFinalizers(append(employer.GetFinalizers(), generateCleanFlz(employer)))
+	employer.SetFinalizers(append(finalizers, cleanFinalizer))
 	if _, ok := r.adapter.(MultiClusterOptions); ok {
 		return true, r.Client.Update(clusterinfo.WithCluster(ctx, clusterinfo.Fed), employer)
 	}
 	return true, r.Client.Update(ctx, employer)
 }
 
-func generateCleanFlz(employer client.Object) string {
-	if len(employer.GetName()) > 57 {
-		b := md5.Sum([]byte(employer.GetName()))
-		return cleanFinalizerPrefix + hex.EncodeToString(b[:])[8:24]
-	}
+func generateOldCleanFlz(employer client.Object) string {
 	return cleanFinalizerPrefix + employer.GetName()
 }

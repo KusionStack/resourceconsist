@@ -59,11 +59,12 @@ var _ = Describe("resource-consist-controller", func() {
 	Context("employer synced", func() {
 		svc0 := corev1.Service{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      "resource-consist-ut-svc-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				Name:      "resource-consist-ut-svc",
 				Namespace: "default",
 				Labels: map[string]string{
 					v1alpha1.ControlledByKusionStackLabelKey: "true",
 				},
+				Finalizers: []string{cleanFinalizerPrefix + "resource-consist-ut-svc"},
 			},
 			Spec: corev1.ServiceSpec{
 				Ports: []corev1.ServicePort{
@@ -92,7 +93,12 @@ var _ = Describe("resource-consist-controller", func() {
 					return false
 				}
 				for _, flz := range svcTmp.GetFinalizers() {
-					if flz == generateCleanFlz(&svc0) {
+					if flz == generateOldCleanFlz(&svcTmp) {
+						return false
+					}
+				}
+				for _, flz := range svcTmp.GetFinalizers() {
+					if flz == cleanFinalizer {
 						return true
 					}
 				}
