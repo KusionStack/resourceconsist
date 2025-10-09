@@ -159,6 +159,19 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		return reconcile.Result{}, err
 	}
 
+	defer func() {
+		if err != nil {
+			if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {
+				err = recordOptions.RecordErrorConditions(ctx, employer, err)
+				if err != nil {
+					logger.Error(err, "record error conditions failed")
+					r.recorder.Eventf(employer, corev1.EventTypeWarning, RecordErrorConditionsFailed,
+						"record error conditions failed: %s", err.Error())
+				}
+			}
+		}
+	}()
+
 	// Ensure employer-clean finalizer firstly, employer-clean finalizer should be cleaned at the end
 	updated, err := r.ensureEmployerCleanFlz(ctx, employer)
 	if err != nil {
@@ -186,11 +199,15 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 	expectedEmployer, err := r.adapter.GetExpectedEmployer(ctx, employer)
 	if err != nil {
 		logger.Error(err, "get expect employer failed")
+		r.recorder.Eventf(employer, corev1.EventTypeWarning, GetExpectedEmployerFailed,
+			"get expect employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	currentEmployer, err := r.adapter.GetCurrentEmployer(ctx, employer)
 	if err != nil {
 		logger.Error(err, "get current employer failed")
+		r.recorder.Eventf(employer, corev1.EventTypeWarning, GetCurrentEmployerFailed,
+			"get current employer failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	isCleanEmployer, syncEmployerFailedExist, cudEmployerResults, err := r.syncEmployer(ctx, employer, expectedEmployer, currentEmployer)
@@ -205,11 +222,15 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 	expectedEmployees, err := r.adapter.GetExpectedEmployee(ctx, employer)
 	if err != nil {
 		logger.Error(err, "get expect employees failed")
+		r.recorder.Eventf(employer, corev1.EventTypeWarning, GetExpectedEmployeesFailed,
+			"get expect employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	currentEmployees, err := r.adapter.GetCurrentEmployee(ctx, employer)
 	if err != nil {
 		logger.Error(err, "get current employees failed")
+		r.recorder.Eventf(employer, corev1.EventTypeWarning, GetCurrentEmployeesFailed,
+			"get current employees failed: %s", err.Error())
 		return reconcile.Result{}, err
 	}
 	isCleanEmployee, syncEmployeeFailedExist, cudEmployeeResults, err := r.syncEmployees(ctx, employer, expectedEmployees, currentEmployees)
@@ -245,6 +266,8 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		err = recordOptions.RecordStatuses(ctx, employer, cudEmployerResults, cudEmployeeResults)
 		if err != nil {
 			logger.Error(err, "record status failed")
+			r.recorder.Eventf(employer, corev1.EventTypeWarning, RecordStatusesFailed,
+				"record status failed: %s", err.Error())
 			return reconcile.Result{}, err
 		}
 	}

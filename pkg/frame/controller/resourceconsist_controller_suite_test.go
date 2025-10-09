@@ -35,6 +35,7 @@ type DemoControllerAdapter struct {
 
 var _ ReconcileAdapter = &DemoControllerAdapter{}
 var _ ReconcileLifecycleOptions = &DemoControllerAdapter{}
+var _ StatusRecordOptions = &DemoControllerAdapter{}
 
 var needRecordEmployees = false
 
@@ -43,6 +44,25 @@ func NewDemoReconcileAdapter(c client.Client, rc *DemoResourceProviderClient) Re
 		Client:                 c,
 		resourceProviderClient: rc,
 	}
+}
+
+func (r *DemoControllerAdapter) RecordStatuses(ctx context.Context, employer client.Object,
+	cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults) error {
+	if employer.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] != "" {
+		employer.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] = ""
+		return r.Update(ctx, employer)
+	}
+	return nil
+}
+
+func (r *DemoControllerAdapter) RecordErrorConditions(ctx context.Context, employer client.Object, err error) error {
+	annos := employer.GetAnnotations()
+	if annos == nil {
+		annos = make(map[string]string)
+	}
+	annos["resource-consist.kusionstack.io/demo-condition"] = err.Error()
+	employer.SetAnnotations(annos)
+	return r.Update(ctx, employer)
 }
 
 func (r *DemoControllerAdapter) FollowPodOpsLifeCycle() bool {

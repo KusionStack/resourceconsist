@@ -493,6 +493,18 @@ var _ = Describe("resource-consist-controller", func() {
 				return false
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
+			Eventually(func() bool {
+				tmp := &corev1.Service{}
+				err := mgr.GetClient().Get(context.Background(), types.NamespacedName{
+					Name:      svc2.Name,
+					Namespace: svc2.Namespace,
+				}, tmp)
+				if err != nil {
+					return false
+				}
+				return tmp.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] == "syncCreate failed, err: fake err"
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+
 			demoResourceVipStatusInProvider.Store(svc2.Name, DemoServiceDetails{
 				RemoteVIP:    "demo-remote-VIP",
 				RemoteVIPQPS: 100,
@@ -501,6 +513,18 @@ var _ = Describe("resource-consist-controller", func() {
 			Eventually(func() bool {
 				details, exist := demoResourceVipStatusInProvider.Load(svc2.Name)
 				return exist && details.(DemoServiceDetails).RemoteVIP == "demo-remote-VIP" && details.(DemoServiceDetails).RemoteVIPQPS == 100
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+
+			Eventually(func() bool {
+				tmp := &corev1.Service{}
+				err := mgr.GetClient().Get(context.Background(), types.NamespacedName{
+					Name:      svc2.Name,
+					Namespace: svc2.Namespace,
+				}, tmp)
+				if err != nil {
+					return false
+				}
+				return tmp.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] == ""
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 		})
 
