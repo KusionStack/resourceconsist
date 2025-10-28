@@ -88,6 +88,11 @@ type ReconcileLifecycleOptions interface {
 	// NeedRecordLifecycleFinalizerCondition only needed for those adapters that follow PodOpsLifecycle,
 	// in the case of employment relationship might change and resources in backend provider might be changed by others.
 	NeedRecordLifecycleFinalizerCondition() bool
+
+	// GetSelectedEmployeeNames returns employees' names selected by employer
+	// note: in multi cluster case, if adapters deployed in fed and employees are under local, the format of employeeName
+	// should be "employeeName" + "#" + "clusterName"
+	GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error)
 }
 
 type ReconcileRequeueOptions interface {
@@ -98,11 +103,6 @@ type ReconcileRequeueOptions interface {
 // ReconcileAdapter is the interface that customized controllers should implement.
 type ReconcileAdapter interface {
 	GetControllerName() string
-
-	// GetSelectedEmployeeNames returns employees' names selected by employer
-	// note: in multi cluster case, if adapters deployed in fed and employees are under local, the format of employeeName
-	// should be "employeeName" + "#" + "clusterName"
-	GetSelectedEmployeeNames(ctx context.Context, employer client.Object) ([]string, error)
 
 	// GetExpectedEmployer and GetCurrentEmployer return expect/current status of employer from related backend provider
 	GetExpectedEmployer(ctx context.Context, employer client.Object) ([]IEmployer, error)
@@ -134,6 +134,7 @@ type IEmployee interface {
 	// GetEmployeeName returns employee's name
 	// note: in multi cluster case, if adapters deployed in fed and employees are under local, the format of employeeName
 	// should be "employeeName" + "#" + "clusterName"
+	// GetEmployeeName need to be implemented if follow Lifecycle
 	GetEmployeeName() string
 	GetEmployeeStatuses() interface{}
 	EmployeeEqual(employee IEmployee) (bool, error)

@@ -214,7 +214,7 @@ func (r *Consist) syncEmployees(ctx context.Context, employer client.Object, exp
 	needRecordEmployees := lifecycleOptionsImplemented && lifecycleOptions.FollowPodOpsLifeCycle() && lifecycleOptions.NeedRecordLifecycleFinalizerCondition()
 	if needRecordEmployees {
 		if employer.GetAnnotations()[lifecycleFinalizerRecordedAnnoKey] != "" {
-			selectedEmployees, err := r.adapter.GetSelectedEmployeeNames(ctx, employer)
+			selectedEmployees, err := lifecycleOptions.GetSelectedEmployeeNames(ctx, employer)
 			if err != nil {
 				return false, false, CUDEmployeeResults{}, fmt.Errorf("GetSelectedEmployeeNames failed, err: %s", err.Error())
 			}
@@ -297,7 +297,7 @@ func (r *Consist) ensureExpectedFinalizer(ctx context.Context, employer client.O
 		return true, nil
 	}
 
-	selectedEmployeeNames, err := r.adapter.GetSelectedEmployeeNames(ctx, employer)
+	selectedEmployeeNames, err := lifecycleOptions.GetSelectedEmployeeNames(ctx, employer)
 	if err != nil {
 		return false, fmt.Errorf("get selected employees' names failed, err: %s", err.Error())
 	}
