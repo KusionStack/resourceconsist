@@ -254,14 +254,6 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		}
 	}
 
-	if syncEmployerFailedExist || syncEmployeeFailedExist {
-		requeueOptions, requeueOptionsImplemented := r.adapter.(ReconcileRequeueOptions)
-		if requeueOptionsImplemented {
-			return reconcile.Result{RequeueAfter: requeueOptions.EmployeeSyncRequeueInterval()}, nil
-		}
-		return reconcile.Result{}, fmt.Errorf("employer or employees synced failed exist")
-	}
-
 	if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {
 		err = recordOptions.RecordStatuses(ctx, employer, cudEmployerResults, cudEmployeeResults)
 		if err != nil {
@@ -270,6 +262,14 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 				"record status failed: %s", err.Error())
 			return reconcile.Result{}, err
 		}
+	}
+
+	if syncEmployerFailedExist || syncEmployeeFailedExist {
+		requeueOptions, requeueOptionsImplemented := r.adapter.(ReconcileRequeueOptions)
+		if requeueOptionsImplemented {
+			return reconcile.Result{RequeueAfter: requeueOptions.EmployeeSyncRequeueInterval()}, nil
+		}
+		return reconcile.Result{}, fmt.Errorf("employer or employees synced failed exist")
 	}
 
 	return reconcile.Result{}, nil
