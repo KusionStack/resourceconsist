@@ -285,9 +285,9 @@ var _ = Describe("resource-consist-controller", func() {
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod.Name)
-				return exist && details.(DemoPodStatus).GetEmployeeName() == pod.Name &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
+				return exist && details.(*DemoPodStatus).GetEmployeeName() == pod.Name &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
 			Eventually(func() bool {
@@ -344,9 +344,9 @@ var _ = Describe("resource-consist-controller", func() {
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod.Name)
-				return exist && details.(DemoPodStatus).GetEmployeeName() == pod.Name &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 0 &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == false
+				return exist && details.(*DemoPodStatus).GetEmployeeName() == pod.Name &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 0 &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == false
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
 			Eventually(func() bool {
@@ -373,9 +373,9 @@ var _ = Describe("resource-consist-controller", func() {
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod.Name)
-				return exist && details.(DemoPodStatus).GetEmployeeName() == pod.Name &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
+				return exist && details.(*DemoPodStatus).GetEmployeeName() == pod.Name &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 		})
 
@@ -551,7 +551,7 @@ var _ = Describe("resource-consist-controller", func() {
 				return false
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
-			demoResourceRsStatusInProvider.Store(pod2.Name, DemoPodStatus{
+			demoResourceRsStatusInProvider.Store(pod2.Name, &DemoPodStatus{
 				EmployeeId:   pod2.Name,
 				EmployeeName: pod2.Name,
 				EmployeeStatuses: PodEmployeeStatuses{
@@ -567,9 +567,9 @@ var _ = Describe("resource-consist-controller", func() {
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod2.Name)
-				return exist && details.(DemoPodStatus).GetEmployeeName() == pod2.Name &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 0 &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == false
+				return exist && details.(*DemoPodStatus).GetEmployeeName() == pod2.Name &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 0 &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == false
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 		})
 
@@ -708,9 +708,9 @@ var _ = Describe("resource-consist-controller", func() {
 
 			Eventually(func() bool {
 				details, exist := demoResourceRsStatusInProvider.Load(pod3.Name)
-				return exist && details.(DemoPodStatus).GetEmployeeName() == pod3.Name &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
-					details.(DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
+				return exist && details.(*DemoPodStatus).GetEmployeeName() == pod3.Name &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficWeight == 100 &&
+					details.(*DemoPodStatus).GetEmployeeStatuses().(PodEmployeeStatuses).ExtraStatus.(PodExtraStatus).TrafficOn == true
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
 			Eventually(func() bool {

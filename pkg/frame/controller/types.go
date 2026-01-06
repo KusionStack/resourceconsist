@@ -126,6 +126,7 @@ type ReconcileAdapter interface {
 type IEmployer interface {
 	GetEmployerId() string
 	GetEmployerStatuses() interface{}
+	SetEmployerStatuses(employerStatuses interface{})
 	EmployerEqual(employer IEmployer) (bool, error)
 }
 
@@ -137,6 +138,7 @@ type IEmployee interface {
 	// GetEmployeeName need to be implemented if follow Lifecycle
 	GetEmployeeName() string
 	GetEmployeeStatuses() interface{}
+	SetEmployeeStatuses(employeeStatuses interface{})
 	EmployeeEqual(employee IEmployee) (bool, error)
 }
 

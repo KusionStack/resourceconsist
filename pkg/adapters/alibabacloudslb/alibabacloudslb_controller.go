@@ -122,7 +122,7 @@ func (r *SlbControllerAdapter) GetExpectedEmployee(ctx context.Context, employer
 
 	expected := make([]controllerframe.IEmployee, len(podList.Items))
 	for idx, pod := range podList.Items {
-		status := AlibabaSlbPodStatus{
+		status := &AlibabaSlbPodStatus{
 			EmployeeID:   pod.Status.PodIP,
 			EmployeeName: pod.Name,
 		}
@@ -170,7 +170,7 @@ func (r *SlbControllerAdapter) GetCurrentEmployee(ctx context.Context, employer 
 
 	current := make([]controllerframe.IEmployee, len(podList.Items))
 	for idx, pod := range podList.Items {
-		status := AlibabaSlbPodStatus{
+		status := &AlibabaSlbPodStatus{
 			EmployeeID:   pod.Status.PodIP,
 			EmployeeName: pod.Name,
 		}
