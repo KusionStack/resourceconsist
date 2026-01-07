@@ -107,7 +107,7 @@ func (r *DemoControllerAdapter) GetExpectedEmployer(ctx context.Context, employe
 		return nil, nil
 	}
 	var expect []IEmployer
-	expect = append(expect, DemoServiceStatus{
+	expect = append(expect, &DemoServiceStatus{
 		EmployerId: employer.GetName(),
 		EmployerStatuses: DemoServiceDetails{
 			RemoteVIP:    "demo-remote-VIP",
@@ -140,9 +140,9 @@ func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer cli
 		return toCreates, nil, nil
 	}
 
-	toCreateDemoServiceStatus := make([]DemoServiceStatus, len(toCreates))
+	toCreateDemoServiceStatus := make([]*DemoServiceStatus, len(toCreates))
 	for idx, create := range toCreates {
-		createDemoServiceStatus, ok := create.(DemoServiceStatus)
+		createDemoServiceStatus, ok := create.(*DemoServiceStatus)
 		if !ok {
 			return nil, toCreates, fmt.Errorf("toCreates employer is not DemoServiceStatus")
 		}
@@ -163,9 +163,9 @@ func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer cli
 		return toUpdates, nil, nil
 	}
 
-	toUpdateDemoServiceStatus := make([]DemoServiceStatus, len(toUpdates))
+	toUpdateDemoServiceStatus := make([]*DemoServiceStatus, len(toUpdates))
 	for idx, update := range toUpdates {
-		updateDemoServiceStatus, ok := update.(DemoServiceStatus)
+		updateDemoServiceStatus, ok := update.(*DemoServiceStatus)
 		if !ok {
 			return nil, toUpdates, fmt.Errorf("toUpdates employer is not DemoServiceStatus")
 		}
@@ -186,9 +186,9 @@ func (r *DemoControllerAdapter) DeleteEmployer(ctx context.Context, employer cli
 		return toDeletes, nil, nil
 	}
 
-	toDeleteDemoServiceStatus := make([]DemoServiceStatus, len(toDeletes))
+	toDeleteDemoServiceStatus := make([]*DemoServiceStatus, len(toDeletes))
 	for idx, update := range toDeletes {
-		deleteDemoServiceStatus, ok := update.(DemoServiceStatus)
+		deleteDemoServiceStatus, ok := update.(*DemoServiceStatus)
 		if !ok {
 			return nil, toDeletes, fmt.Errorf("toDeletes employer is not DemoServiceStatus")
 		}
@@ -228,7 +228,7 @@ func (r *DemoControllerAdapter) GetExpectedEmployee(ctx context.Context, employe
 		if !pod.DeletionTimestamp.IsZero() {
 			continue
 		}
-		status := DemoPodStatus{
+		status := &DemoPodStatus{
 			EmployeeId:   pod.Name,
 			EmployeeName: pod.Name,
 		}
@@ -274,10 +274,10 @@ func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer cl
 	if len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
-	toCreateDemoPodStatuses := make([]DemoPodStatus, len(toCreates))
+	toCreateDemoPodStatuses := make([]*DemoPodStatus, len(toCreates))
 
 	for idx, toCreate := range toCreates {
-		podStatus, ok := toCreate.(DemoPodStatus)
+		podStatus, ok := toCreate.(*DemoPodStatus)
 		if !ok {
 			return nil, toCreates, fmt.Errorf("toCreate is not DemoPodStatus")
 		}
@@ -299,10 +299,10 @@ func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer cl
 		return toUpdates, nil, nil
 	}
 
-	toUpdateDemoPodStatuses := make([]DemoPodStatus, len(toUpdates))
+	toUpdateDemoPodStatuses := make([]*DemoPodStatus, len(toUpdates))
 
 	for idx, toUpdate := range toUpdates {
-		podStatus, ok := toUpdate.(DemoPodStatus)
+		podStatus, ok := toUpdate.(*DemoPodStatus)
 		if !ok {
 			return nil, toUpdates, fmt.Errorf("toUpdate is not DemoPodStatus")
 		}
@@ -324,10 +324,10 @@ func (r *DemoControllerAdapter) DeleteEmployees(ctx context.Context, employer cl
 		return toDeletes, nil, nil
 	}
 
-	toDeleteDemoPodStatuses := make([]DemoPodStatus, len(toDeletes))
+	toDeleteDemoPodStatuses := make([]*DemoPodStatus, len(toDeletes))
 
 	for idx, toDelete := range toDeletes {
-		podStatus, ok := toDelete.(DemoPodStatus)
+		podStatus, ok := toDelete.(*DemoPodStatus)
 		if !ok {
 			return nil, toDeletes, fmt.Errorf("toDelete is not DemoPodStatus")
 		}
@@ -344,8 +344,8 @@ func (r *DemoControllerAdapter) DeleteEmployees(ctx context.Context, employer cl
 	return toDeletes, nil, nil
 }
 
-var _ IEmployer = DemoServiceStatus{}
-var _ IEmployee = DemoPodStatus{}
+var _ IEmployer = &DemoServiceStatus{}
+var _ IEmployee = &DemoPodStatus{}
 
 type DemoServiceStatus struct {
 	EmployerId       string
@@ -357,15 +357,19 @@ type DemoServiceDetails struct {
 	RemoteVIPQPS int
 }
 
-func (d DemoServiceStatus) GetEmployerId() string {
+func (d *DemoServiceStatus) GetEmployerId() string {
 	return d.EmployerId
 }
 
-func (d DemoServiceStatus) GetEmployerStatuses() interface{} {
+func (d *DemoServiceStatus) GetEmployerStatuses() interface{} {
 	return d.EmployerStatuses
 }
 
-func (d DemoServiceStatus) EmployerEqual(employer IEmployer) (bool, error) {
+func (d *DemoServiceStatus) SetEmployerStatuses(employerStatus interface{}) {
+	d.EmployerStatuses = employerStatus.(DemoServiceDetails)
+}
+
+func (d *DemoServiceStatus) EmployerEqual(employer IEmployer) (bool, error) {
 	if d.EmployerId != employer.GetEmployerId() {
 		return false, nil
 	}
@@ -382,19 +386,23 @@ type DemoPodStatus struct {
 	EmployeeStatuses PodEmployeeStatuses
 }
 
-func (d DemoPodStatus) GetEmployeeId() string {
+func (d *DemoPodStatus) GetEmployeeId() string {
 	return d.EmployeeId
 }
 
-func (d DemoPodStatus) GetEmployeeName() string {
+func (d *DemoPodStatus) GetEmployeeName() string {
 	return d.EmployeeName
 }
 
-func (d DemoPodStatus) GetEmployeeStatuses() interface{} {
+func (d *DemoPodStatus) GetEmployeeStatuses() interface{} {
 	return d.EmployeeStatuses
 }
 
-func (d DemoPodStatus) EmployeeEqual(employeeStatus IEmployee) (bool, error) {
+func (d *DemoPodStatus) SetEmployeeStatuses(employeeStatus interface{}) {
+	d.EmployeeStatuses = employeeStatus.(PodEmployeeStatuses)
+}
+
+func (d *DemoPodStatus) EmployeeEqual(employeeStatus IEmployee) (bool, error) {
 	if d.EmployeeName != employeeStatus.GetEmployeeName() {
 		return false, nil
 	}
@@ -425,12 +433,12 @@ type DemoResourceProviderClient struct {
 }
 
 type DemoResourceVipOps struct {
-	VipStatuses []DemoServiceStatus
+	VipStatuses []*DemoServiceStatus
 	MockData    bool
 }
 
 type DemoResourceRsOps struct {
-	RsStatuses []DemoPodStatus
+	RsStatuses []*DemoPodStatus
 	MockData   bool
 }
 
@@ -467,9 +475,9 @@ func (d *DemoResourceProviderClient) DeleteVip(req *DemoResourceVipOps) (*DemoRe
 func (d *DemoResourceProviderClient) QueryVip(req *DemoResourceVipOps) (*DemoResourceVipOps, error) {
 	args := d.Called(req)
 	if !args.Get(0).(*DemoResourceVipOps).MockData {
-		vipStatuses := make([]DemoServiceStatus, 0)
+		vipStatuses := make([]*DemoServiceStatus, 0)
 		demoResourceVipStatusInProvider.Range(func(key, value any) bool {
-			vipStatuses = append(vipStatuses, DemoServiceStatus{
+			vipStatuses = append(vipStatuses, &DemoServiceStatus{
 				EmployerId:       key.(string),
 				EmployerStatuses: value.(DemoServiceDetails),
 			})
@@ -515,9 +523,9 @@ func (d *DemoResourceProviderClient) DeleteRealServer(req *DemoResourceRsOps) (*
 func (d *DemoResourceProviderClient) QueryRealServer(req *DemoResourceRsOps) (*DemoResourceRsOps, error) {
 	args := d.Called(req)
 	if !args.Get(0).(*DemoResourceRsOps).MockData {
-		rsStatuses := make([]DemoPodStatus, 0)
+		rsStatuses := make([]*DemoPodStatus, 0)
 		demoResourceRsStatusInProvider.Range(func(key, value any) bool {
-			rsStatuses = append(rsStatuses, value.(DemoPodStatus))
+			rsStatuses = append(rsStatuses, value.(*DemoPodStatus))
 			return true
 		})
 		return &DemoResourceRsOps{

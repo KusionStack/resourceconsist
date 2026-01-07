@@ -23,7 +23,7 @@ import (
 	"kusionstack.io/resourceconsist/pkg/frame/controller"
 )
 
-var _ controller.IEmployee = AlibabaSlbPodStatus{}
+var _ controller.IEmployee = &AlibabaSlbPodStatus{}
 
 type AlibabaSlbPodStatus struct {
 	EmployeeID       string
@@ -35,19 +35,23 @@ type PodExtraStatus struct {
 	TrafficOn bool
 }
 
-func (a AlibabaSlbPodStatus) GetEmployeeId() string {
+func (a *AlibabaSlbPodStatus) GetEmployeeId() string {
 	return a.EmployeeID
 }
 
-func (a AlibabaSlbPodStatus) GetEmployeeName() string {
+func (a *AlibabaSlbPodStatus) GetEmployeeName() string {
 	return a.EmployeeName
 }
 
-func (a AlibabaSlbPodStatus) GetEmployeeStatuses() interface{} {
+func (a *AlibabaSlbPodStatus) GetEmployeeStatuses() interface{} {
 	return a.EmployeeStatuses
 }
 
-func (a AlibabaSlbPodStatus) EmployeeEqual(employeeStatus controller.IEmployee) (bool, error) {
+func (a *AlibabaSlbPodStatus) SetEmployeeStatuses(employeeStatus interface{}) {
+	a.EmployeeStatuses = employeeStatus.(controller.PodEmployeeStatuses)
+}
+
+func (a *AlibabaSlbPodStatus) EmployeeEqual(employeeStatus controller.IEmployee) (bool, error) {
 	if a.EmployeeName != employeeStatus.GetEmployeeName() {
 		return false, nil
 	}
