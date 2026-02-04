@@ -47,20 +47,24 @@ func NewDemoReconcileAdapter(c client.Client, rc *DemoResourceProviderClient) Re
 }
 
 func (r *DemoControllerAdapter) RecordStatuses(ctx context.Context, employer client.Object,
-	cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults) error {
-	if employer.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] != "" {
-		employer.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] = ""
-		return r.Update(ctx, employer)
-	}
-	return nil
-}
-
-func (r *DemoControllerAdapter) RecordErrorConditions(ctx context.Context, employer client.Object, err error) error {
+	cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults, err error) error {
 	annos := employer.GetAnnotations()
 	if annos == nil {
 		annos = make(map[string]string)
 	}
-	annos["resource-consist.kusionstack.io/demo-condition"] = err.Error()
+
+	if err != nil {
+		// Record error condition
+		annos["resource-consist.kusionstack.io/demo-condition"] = err.Error()
+	} else {
+		// Clear error condition if present
+		if annos["resource-consist.kusionstack.io/demo-condition"] != "" {
+			annos["resource-consist.kusionstack.io/demo-condition"] = ""
+		} else {
+			return nil
+		}
+	}
+
 	employer.SetAnnotations(annos)
 	return r.Update(ctx, employer)
 }

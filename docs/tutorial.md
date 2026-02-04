@@ -3,8 +3,8 @@
 
 The frame, ```kusionstack.io/resourceconsist/pkg/frame```, is used for adapters starting a controller, which handles 
 Reconcile and Employer/Employees' spec&status. If you wrote an adapter in your own repo, you can import 
-```kusionstack.io/resourceconsist/pkg/frame/controller``` and ```kusionstack.io/resourceconsist/pkg/frame/webhook```, 
-]and call AddToMgr to start a controller.
+```kusionstack.io/resourceconsist/pkg/frame/controller``` and ```kusionstack.io/resourceconsist/pkg/frame/webhook```,
+and call AddToMgr to start a controller.
 
 >webhookAdapter is only necessary to be implemented for controllers following PodOpsLifecycle.
 ```Go
@@ -93,7 +93,7 @@ type DemoControllerAdapter struct {
 }
 ```
 Declaring that the DemoControllerAdapter implemented ```ReconcileAdapter``` and ```ReconcileLifecycleOptions```. 
-Implementing ```RconcileAdapter``` is a must action, while ```ReconcileLifecycleOptions``` isn't, check the remarks 
+Implementing ```ReconcileAdapter``` is a must action, while ```ReconcileLifecycleOptions``` isn't, check the remarks 
 for ```ReconcileLifecycleOptions``` in ```kusionstack.io/resourceconsist/pkg/frame/controller/types.go``` to find why.
 ```Go
 var _ ReconcileAdapter = &DemoControllerAdapter{}
@@ -116,6 +116,7 @@ employee.
 type IEmployer interface {
 	GetEmployerId() string
 	GetEmployerStatuses() interface{}
+	SetEmployerStatuses(employerStatuses interface{})
 	EmployerEqual(employer IEmployer) (bool, error)
 }
 
@@ -123,6 +124,7 @@ type IEmployee interface {
 	GetEmployeeId() string
 	GetEmployeeName() string
 	GetEmployeeStatuses() interface{}
+	SetEmployeeStatuses(employeeStatuses interface{})
 	EmployeeEqual(employee IEmployee) (bool, error)
 }
 
@@ -208,13 +210,13 @@ related backend provider. Here in the demo adapter, ```CreateEmployer/UpdateEmpl
 ```demoResourceVipStatusInProvider```.
 ```Go
 func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer client.Object, toCreates []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toCreates == nil || len(toCreates) == 0 {
+	if len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
 
-	toCreateDemoServiceStatus := make([]DemoServiceStatus, len(toCreates))
+	toCreateDemoServiceStatus := make([]*DemoServiceStatus, len(toCreates))
 	for idx, create := range toCreates {
-		createDemoServiceStatus, ok := create.(DemoServiceStatus)
+		createDemoServiceStatus, ok := create.(*DemoServiceStatus)
 		if !ok {
 			return nil, toCreates, fmt.Errorf("toCreates employer is not DemoServiceStatus")
 		}
@@ -231,13 +233,13 @@ func (r *DemoControllerAdapter) CreateEmployer(ctx context.Context, employer cli
 }
 
 func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer client.Object, toUpdates []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toUpdates == nil || len(toUpdates) == 0 {
+	if len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
 
-	toUpdateDemoServiceStatus := make([]DemoServiceStatus, len(toUpdates))
+	toUpdateDemoServiceStatus := make([]*DemoServiceStatus, len(toUpdates))
 	for idx, update := range toUpdates {
-		updateDemoServiceStatus, ok := update.(DemoServiceStatus)
+		updateDemoServiceStatus, ok := update.(*DemoServiceStatus)
 		if !ok {
 			return nil, toUpdates, fmt.Errorf("toUpdates employer is not DemoServiceStatus")
 		}
@@ -254,13 +256,13 @@ func (r *DemoControllerAdapter) UpdateEmployer(ctx context.Context, employer cli
 }
 
 func (r *DemoControllerAdapter) DeleteEmployer(ctx context.Context, employer client.Object, toDeletes []IEmployer) ([]IEmployer, []IEmployer, error) {
-	if toDeletes == nil || len(toDeletes) == 0 {
+	if len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
 
-	toDeleteDemoServiceStatus := make([]DemoServiceStatus, len(toDeletes))
+	toDeleteDemoServiceStatus := make([]*DemoServiceStatus, len(toDeletes))
 	for idx, update := range toDeletes {
-		deleteDemoServiceStatus, ok := update.(DemoServiceStatus)
+		deleteDemoServiceStatus, ok := update.(*DemoServiceStatus)
 		if !ok {
 			return nil, toDeletes, fmt.Errorf("toDeletes employer is not DemoServiceStatus")
 		}
@@ -351,13 +353,13 @@ on related backend provider. Here in the demo adapter, ```CreateEmployees/Update
 handles ```demoResourceRsStatusInProvider```.
 ```Go
 func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer client.Object, toCreates []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toCreates == nil || len(toCreates) == 0 {
+	if len(toCreates) == 0 {
 		return toCreates, nil, nil
 	}
-	toCreateDemoPodStatuses := make([]DemoPodStatus, len(toCreates))
+	toCreateDemoPodStatuses := make([]*DemoPodStatus, len(toCreates))
 
 	for idx, toCreate := range toCreates {
-		podStatus, ok := toCreate.(DemoPodStatus)
+		podStatus, ok := toCreate.(*DemoPodStatus)
 		if !ok {
 			return nil, toCreates, fmt.Errorf("toCreate is not DemoPodStatus")
 		}
@@ -375,14 +377,14 @@ func (r *DemoControllerAdapter) CreateEmployees(ctx context.Context, employer cl
 }
 
 func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer client.Object, toUpdates []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toUpdates == nil || len(toUpdates) == 0 {
+	if len(toUpdates) == 0 {
 		return toUpdates, nil, nil
 	}
 
-	toUpdateDemoPodStatuses := make([]DemoPodStatus, len(toUpdates))
+	toUpdateDemoPodStatuses := make([]*DemoPodStatus, len(toUpdates))
 
 	for idx, toUpdate := range toUpdates {
-		podStatus, ok := toUpdate.(DemoPodStatus)
+		podStatus, ok := toUpdate.(*DemoPodStatus)
 		if !ok {
 			return nil, toUpdates, fmt.Errorf("toUpdate is not DemoPodStatus")
 		}
@@ -400,14 +402,14 @@ func (r *DemoControllerAdapter) UpdateEmployees(ctx context.Context, employer cl
 }
 
 func (r *DemoControllerAdapter) DeleteEmployees(ctx context.Context, employer client.Object, toDeletes []IEmployee) ([]IEmployee, []IEmployee, error) {
-	if toDeletes == nil || len(toDeletes) == 0 {
+	if len(toDeletes) == 0 {
 		return toDeletes, nil, nil
 	}
 
-	toDeleteDemoPodStatuses := make([]DemoPodStatus, len(toDeletes))
+	toDeleteDemoPodStatuses := make([]*DemoPodStatus, len(toDeletes))
 
 	for idx, toDelete := range toDeletes {
-		podStatus, ok := toDelete.(DemoPodStatus)
+		podStatus, ok := toDelete.(*DemoPodStatus)
 		if !ok {
 			return nil, toDeletes, fmt.Errorf("toDelete is not DemoPodStatus")
 		}

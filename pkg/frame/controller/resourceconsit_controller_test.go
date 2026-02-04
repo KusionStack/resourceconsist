@@ -502,6 +502,7 @@ var _ = Describe("resource-consist-controller", func() {
 				if err != nil {
 					return false
 				}
+				fmt.Println(tmp.GetAnnotations())
 				return tmp.GetAnnotations()["resource-consist.kusionstack.io/demo-condition"] == "syncCreate failed, err: fake err"
 			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
 
