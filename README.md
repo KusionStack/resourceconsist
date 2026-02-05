@@ -3,8 +3,8 @@
 customized controller can be realized easily, and offering the ability of following 
 [**PodOpsLifecycle**](https://kusionstack.io/docs/operating/concepts/podopslifecycle) for controllers.
 
-The only thing users need to do to realize a customized controller is writing an adapter implementing 
-[ReconcileAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/controller/types.go#L93). 
+The only thing users need to do to realize a customized controller is writing an adapter implementing
+[ReconcileAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/controller/types.go#L100). 
 For controllers following **PodOpsLifecycle**, 
 [WebhookAdapter](https://github.com/KusionStack/resourceconsist/blob/main/pkg/frame/webhook/types.go#L26) is 
 also necessary to be implemented.
@@ -30,7 +30,7 @@ is an adapter handles resources by itself, while [SlbControllerAdapter](https://
 is an adapter handles resources cooperate with CCM controller.
 
 With **ResourceConsist**, you can build a bridge between existing controllers and PodOpsLifecycle, just like what
-SlbControllerAdapter](https://github.com/KusionStack/resourceconsist/tree/main/pkg/adapters/alibabacloudslb/alibabacloudslb_controller.go#L35) did.
+[SlbControllerAdapter](https://github.com/KusionStack/resourceconsist/tree/main/pkg/adapters/alibabacloudslb/alibabacloudslb_controller.go#L35) did.
 
 Please visit [tutorial](https://github.com/KusionStack/resourceconsist/tree/main/docs/tutorial.md) to start a controller.
 ## ☎️ Contact us

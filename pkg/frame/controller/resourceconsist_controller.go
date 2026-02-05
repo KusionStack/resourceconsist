@@ -162,7 +162,7 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 	defer func() {
 		if err != nil {
 			if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {
-				err = recordOptions.RecordErrorConditions(ctx, employer, err)
+				err = recordOptions.RecordStatuses(ctx, employer, CUDEmployerResults{}, CUDEmployeeResults{}, err)
 				if err != nil {
 					logger.Error(err, "record error conditions failed")
 					r.recorder.Eventf(employer, corev1.EventTypeWarning, RecordErrorConditionsFailed,
@@ -255,7 +255,7 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 	}
 
 	if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {
-		err = recordOptions.RecordStatuses(ctx, employer, cudEmployerResults, cudEmployeeResults)
+		err = recordOptions.RecordStatuses(ctx, employer, cudEmployerResults, cudEmployeeResults, err)
 		if err != nil {
 			logger.Error(err, "record status failed")
 			r.recorder.Eventf(employer, corev1.EventTypeWarning, RecordStatusesFailed,

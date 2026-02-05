@@ -68,14 +68,11 @@ type ExpectedFinalizerRecordOptions interface {
 
 // StatusRecordOptions defines methods of record something for adapters
 type StatusRecordOptions interface {
-	// RecordStatuses records statuses of employer and employees, called at the end of successful reconcile.
+	// RecordStatuses records statuses of employer and employees, called at the end of reconcile.
 	// cudEmployerResults and cudEmployeeResults are the results of create/update/delete operations on employer and employees
+	// err indicates if reconcile failed, if err is not nil, error condition will be recorded, otherwise status will be recorded
 	RecordStatuses(ctx context.Context, employer client.Object,
-		cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults) error
-
-	// RecordErrorConditions records error conditions, called at the end of failed reconcile.
-	// usually, something recorded in RecordErrorConditions should be erased in RecordStatuses.
-	RecordErrorConditions(ctx context.Context, employer client.Object, err error) error
+		cudEmployerResults CUDEmployerResults, cudEmployeeResults CUDEmployeeResults, err error) error
 }
 
 // ReconcileLifecycleOptions defines whether PodOpsLifecycle followed
