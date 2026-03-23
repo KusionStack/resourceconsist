@@ -159,6 +159,21 @@ func (r *Consist) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		return reconcile.Result{}, err
 	}
 
+	// Validate employer if ValidateOptions is implemented
+	if validateOptions, ok := r.adapter.(ValidateOptions); ok {
+		isvalid, validateErr := validateOptions.Validate(ctx, employer)
+		if validateErr != nil {
+			logger.Error(validateErr, "validate employer failed")
+			r.recorder.Eventf(employer, corev1.EventTypeWarning, ValidateEmployerFailed,
+				"validate employer failed: %s", validateErr.Error())
+			return reconcile.Result{}, validateErr
+		}
+		if !isvalid {
+			logger.Info("employer is not valid, skip reconciliation")
+			return reconcile.Result{}, nil
+		}
+	}
+
 	defer func() {
 		if err != nil {
 			if recordOptions, ok := r.adapter.(StatusRecordOptions); ok {

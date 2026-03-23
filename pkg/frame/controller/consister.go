@@ -334,13 +334,7 @@ func (r *Consist) ensureExpectedFinalizerNotNeedRecord(ctx context.Context, empl
 			Succeed: false,
 		})
 	}
-	errPatchEmployees := r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
-	for _, deleteExpectedFinalizerOps := range toDelete {
-		if deleteExpectedFinalizerOps.Succeed {
-			return true, errPatchEmployees
-		}
-	}
-	return false, errPatchEmployees
+	return false, r.patchPodExpectedFinalizer(ctx, employer, toAdd, toDelete)
 }
 
 func (r *Consist) ensureExpectedFinalizerNeedRecord(ctx context.Context, employer client.Object, selectedEmployeeNames []string) (bool, error) {

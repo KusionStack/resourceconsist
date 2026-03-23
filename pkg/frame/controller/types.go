@@ -97,6 +97,19 @@ type ReconcileRequeueOptions interface {
 	EmployeeSyncRequeueInterval() time.Duration
 }
 
+// ValidateOptions defines validation method for employer resource.
+// If not implemented, no validation is performed and the employer is considered valid.
+// This is useful when validation logic needs to halt reconciliation until the employer is validated.
+type ValidateOptions interface {
+	// Validate validates the employer resource after it's fetched from the cluster.
+	// Returns (isvalid, err):
+	// - valid=true, err=nil: validation passed, continue reconciliation
+	// - valid=false, err=nil: validation failed but no error, stop reconciliation (return reconcile.Result{}, nil)
+	// - valid=false, err!=nil: validation failed with error, return error and retry
+	// - valid=true, err!=nil: should not happen, treated as error
+	Validate(ctx context.Context, employer client.Object) (valid bool, err error)
+}
+
 // ReconcileAdapter is the interface that customized controllers should implement.
 type ReconcileAdapter interface {
 	GetControllerName() string

@@ -40,4 +40,5 @@ const (
 	CleanEmployerCleanFinalizerSucceed  = "CleanEmployerCleanFinalizerSucceed"
 	RecordStatusesFailed                = "RecordStatusesFailed"
 	RecordErrorConditionsFailed         = "RecordErrorConditionsFailed"
+	ValidateEmployerFailed              = "ValidateEmployerFailed"
 )

@@ -614,6 +614,127 @@ var _ = Describe("resource-consist-controller", func() {
 		})
 	})
 
+	Context("validate employer", func() {
+		svc4 := corev1.Service{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "resource-consist-ut-svc-4",
+				Namespace: "default",
+				Labels: map[string]string{
+					v1alpha1.ControlledByKusionStackLabelKey:  "true",
+					"resource-consist.kusionstack.io/invalid": "true",
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:     "tcp-80",
+						Port:     80,
+						Protocol: corev1.ProtocolTCP,
+					},
+				},
+				Selector: map[string]string{
+					"resource-consist-ut": "resource-consist-ut-4",
+				},
+			},
+		}
+
+		It("employer with invalid label should not reconcile", func() {
+			rc.ExpectedCalls = nil
+			rc.On("QueryVip", mock.Anything).Return(&DemoResourceVipOps{}, nil)
+			rc.On("CreateVip", mock.Anything).Return(&DemoResourceVipOps{}, nil)
+			rc.On("UpdateVip", mock.Anything).Return(&DemoResourceVipOps{}, nil)
+			rc.On("DeleteVip", mock.Anything).Return(&DemoResourceVipOps{}, nil)
+			rc.On("QueryRealServer", mock.Anything).Return(&DemoResourceRsOps{}, nil)
+			rc.On("CreateRealServer", mock.Anything).Return(&DemoResourceRsOps{}, nil)
+			rc.On("UpdateRealServer", mock.Anything).Return(&DemoResourceRsOps{}, nil)
+			rc.On("DeleteRealServer", mock.Anything).Return(&DemoResourceRsOps{}, nil)
+
+			Expect(mgr.GetClient().Create(context.Background(), &svc4)).Should(BeNil())
+
+			// Employer should NOT be created in backend provider because validation failed
+			Consistently(func() bool {
+				_, exist := demoResourceVipStatusInProvider.Load(svc4.Name)
+				return !exist
+			}, 2*time.Second, 100*time.Millisecond).Should(BeTrue())
+
+			// Clean finalizer should NOT be added because validation failed
+			Consistently(func() bool {
+				svcTmp := corev1.Service{}
+				err := mgr.GetClient().Get(context.TODO(), types.NamespacedName{
+					Name:      svc4.Name,
+					Namespace: svc4.Namespace,
+				}, &svcTmp)
+				if err != nil {
+					return false
+				}
+				for _, flz := range svcTmp.GetFinalizers() {
+					if flz == cleanFinalizer {
+						return false
+					}
+				}
+				return true
+			}, 2*time.Second, 100*time.Millisecond).Should(BeTrue())
+		})
+
+		It("after removing invalid label, employer should be reconciled", func() {
+			// Remove invalid label
+			Eventually(func() bool {
+				svcTmp := corev1.Service{}
+				err := mgr.GetClient().Get(context.TODO(), types.NamespacedName{
+					Name:      svc4.Name,
+					Namespace: svc4.Namespace,
+				}, &svcTmp)
+				if err != nil {
+					return false
+				}
+				delete(svcTmp.Labels, "resource-consist.kusionstack.io/invalid")
+				return mgr.GetClient().Update(context.TODO(), &svcTmp) == nil
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+
+			// Clean finalizer should be added now
+			Eventually(func() bool {
+				svcTmp := corev1.Service{}
+				err := mgr.GetClient().Get(context.TODO(), types.NamespacedName{
+					Name:      svc4.Name,
+					Namespace: svc4.Namespace,
+				}, &svcTmp)
+				if err != nil {
+					return false
+				}
+				for _, flz := range svcTmp.GetFinalizers() {
+					if flz == cleanFinalizer {
+						return true
+					}
+				}
+				return false
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+
+			// Now employer should be created in backend provider
+			Eventually(func() bool {
+				details, exist := demoResourceVipStatusInProvider.Load(svc4.Name)
+				return exist && details.(DemoServiceDetails).RemoteVIP == "demo-remote-VIP" && details.(DemoServiceDetails).RemoteVIPQPS == 100
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+		})
+
+		It("clean up svc4", func() {
+			Expect(mgr.GetClient().Delete(context.TODO(), &svc4)).Should(BeNil())
+
+			Eventually(func() bool {
+				svcTmp := corev1.Service{}
+				err := mgr.GetClient().Get(context.TODO(), types.NamespacedName{
+					Name:      svc4.Name,
+					Namespace: svc4.Namespace,
+				}, &svcTmp)
+				return errors.IsNotFound(err)
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+
+			Eventually(func() bool {
+				_, exist := demoResourceVipStatusInProvider.Load(svc4.Name)
+				return !exist
+			}, 3*time.Second, 100*time.Millisecond).Should(BeTrue())
+		})
+	})
+
 	Context("label/selector change", func() {
 		svc3 := corev1.Service{
 			ObjectMeta: v1.ObjectMeta{

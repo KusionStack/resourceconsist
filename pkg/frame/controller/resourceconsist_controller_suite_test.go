@@ -36,6 +36,7 @@ type DemoControllerAdapter struct {
 var _ ReconcileAdapter = &DemoControllerAdapter{}
 var _ ReconcileLifecycleOptions = &DemoControllerAdapter{}
 var _ StatusRecordOptions = &DemoControllerAdapter{}
+var _ ValidateOptions = &DemoControllerAdapter{}
 
 var needRecordEmployees = false
 
@@ -100,6 +101,17 @@ func (r *DemoControllerAdapter) GetSelectedEmployeeNames(ctx context.Context, em
 	}
 
 	return selected, nil
+}
+
+func (r *DemoControllerAdapter) Validate(ctx context.Context, employer client.Object) (bool, error) {
+	// Check if employer has invalid label
+	labels := employer.GetLabels()
+	if labels != nil {
+		if _, exists := labels["resource-consist.kusionstack.io/invalid"]; exists {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func (r *DemoControllerAdapter) GetControllerName() string {
